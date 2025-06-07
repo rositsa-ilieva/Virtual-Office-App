@@ -24,6 +24,7 @@ CREATE TABLE IF NOT EXISTS queues (
   is_automatic BOOLEAN DEFAULT FALSE,
   default_duration INT DEFAULT 15, -- in minutes
   start_time DATETIME NULL, -- queue start time
+  end_time DATETIME NULL, -- queue end time
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (teacher_id) REFERENCES users(id)
 );

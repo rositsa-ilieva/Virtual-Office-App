@@ -37,11 +37,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 $show_start_form = $entry_id;
                 break;
             case 'start':
-                $custom_start = $_POST['custom_start_time'] ?? '';
-                $start_time = $custom_start ? date('Y-m-d H:i:s', strtotime($custom_start)) : date('Y-m-d H:i:s');
-                $stmt = $pdo->prepare('UPDATE queue_entries SET status = "in_meeting", started_at = ? WHERE id = ? AND queue_id = ?');
-                $stmt->execute([$start_time, $entry_id, $queue_id]);
-                $custom_start_time_for_estimation = $start_time;
+                $stmt = $pdo->prepare('UPDATE queue_entries SET status = "in_meeting", started_at = NOW() WHERE id = ? AND queue_id = ?');
+                $stmt->execute([$entry_id, $queue_id]);
+                $custom_start_time_for_estimation = date('Y-m-d H:i:s');
                 break;
             case 'end':
                 $stmt = $pdo->prepare('UPDATE queue_entries SET status = "done", ended_at = NOW() WHERE id = ? AND queue_id = ?');
@@ -101,18 +99,22 @@ $meeting_duration = $queue['default_duration'] ?? 15; // Default to 15 minutes i
 // Use the custom start time of the current meeting as the base for estimation
 if ($in_meeting_entry && $in_meeting_entry['started_at']) {
     $base_time = new DateTime($in_meeting_entry['started_at']);
-} elseif ($custom_start_time_for_estimation) {
-    $base_time = new DateTime($custom_start_time_for_estimation);
+    $base_position = $in_meeting_entry['position'];
 } elseif (!empty($queue['start_time'])) {
     $base_time = new DateTime($queue['start_time']);
+    $base_position = 1;
 } else {
     $base_time = new DateTime();
+    $base_position = 1;
 }
 
 foreach ($entries as &$entry) {
     if ($entry['status'] === 'waiting') {
         $estimated_time = clone $base_time;
-        $estimated_time->add(new DateInterval('PT' . ($meeting_duration * $entry['position']) . 'M'));
+        $offset = ($entry['position'] - $base_position) * $meeting_duration;
+        if ($offset > 0) {
+            $estimated_time->add(new DateInterval('PT' . $offset . 'M'));
+        }
         $entry['estimated_start_time'] = $estimated_time->format('Y-m-d H:i:s');
     }
 }
@@ -186,8 +188,6 @@ unset($entry);
                                             <form method="POST" style="display:inline-block; margin-right:8px;">
                                                 <input type="hidden" name="entry_id" value="<?php echo $entry['id']; ?>">
                                                 <input type="hidden" name="action" value="start">
-                                                <label for="custom_start_time_<?php echo $entry['id']; ?>">Start Time:</label>
-                                                <input type="datetime-local" name="custom_start_time" id="custom_start_time_<?php echo $entry['id']; ?>" value="<?php echo date('Y-m-d\TH:i'); ?>" required>
                                                 <button type="submit" class="btn btn-primary">Confirm Start</button>
                                             </form>
                                         <?php else: ?>

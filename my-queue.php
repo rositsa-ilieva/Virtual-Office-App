@@ -9,14 +9,23 @@ if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'student') {
 
 $user_id = $_SESSION['user_id'];
 
-// Get all queues where this student is currently waiting
+// Get all queues where this student is currently waiting or in a meeting (exclude done/skipped)
 $sql = "SELECT q.id as queue_id, q.purpose, q.meeting_link, q.access_code, qe.position as my_position
         FROM queue_entries qe
         JOIN queues q ON qe.queue_id = q.id
-        WHERE qe.student_id = ? AND qe.status = 'waiting'";
+        WHERE qe.student_id = ? AND qe.status IN ('waiting', 'in_meeting')";
 $stmt = $pdo->prepare($sql);
 $stmt->execute([$user_id]);
 $my_queues = $stmt->fetchAll();
+
+// Get all queues where this student is done or skipped (past)
+$sql_past = "SELECT q.id as queue_id, q.purpose, q.meeting_link, q.access_code, qe.position as my_position, qe.ended_at
+        FROM queue_entries qe
+        JOIN queues q ON qe.queue_id = q.id
+        WHERE qe.student_id = ? AND qe.status IN ('done', 'skipped')";
+$stmt_past = $pdo->prepare($sql_past);
+$stmt_past->execute([$user_id]);
+$past_queues = $stmt_past->fetchAll();
 
 ?>
 <!DOCTYPE html>
@@ -71,7 +80,7 @@ $my_queues = $stmt->fetchAll();
                             </thead>
                             <tbody>
                                 <?php foreach ($waiting as $entry): ?>
-                                    <tr<?php if ($entry['student_name'] === $_SESSION['user_name']) echo ' style="font-weight:bold;background:#e6f7ff"'; ?>>
+                                    <tr<?php if ($entry['student_name'] === $_SESSION['user_name']) echo ' style="font-weight:bold;background:#e6f7ff"'; ?> >
                                         <td><?php echo $entry['position']; ?></td>
                                         <td><?php echo htmlspecialchars($entry['student_name']); ?></td>
                                         <td><?php echo $entry['estimated_start_time'] ? date('g:i A', strtotime($entry['estimated_start_time'])) : '-'; ?></td>
@@ -79,6 +88,25 @@ $my_queues = $stmt->fetchAll();
                                 <?php endforeach; ?>
                             </tbody>
                         </table>
+                    </div>
+                <?php endforeach; ?>
+            <?php endif; ?>
+        </div>
+        <div class="my-queues-container">
+            <h2>Past Queues</h2>
+            <?php if (empty($past_queues)): ?>
+                <p>You have no past queues.</p>
+            <?php else: ?>
+                <?php foreach ($past_queues as $queue): ?>
+                    <div class="queue-block">
+                        <h3><?php echo htmlspecialchars($queue['purpose']); ?></h3>
+                        <?php if (!empty($queue['meeting_link'])): ?>
+                            <p><strong>Meeting Link:</strong> <a href="<?php echo htmlspecialchars($queue['meeting_link']); ?>" target="_blank"><?php echo htmlspecialchars($queue['meeting_link']); ?></a></p>
+                        <?php endif; ?>
+                        <?php if (!empty($queue['access_code'])): ?>
+                            <p><strong>Access Code:</strong> <?php echo htmlspecialchars($queue['access_code']); ?></p>
+                        <?php endif; ?>
+                        <p><strong>Finished At:</strong> <?php echo $queue['ended_at'] ? date('Y-m-d g:i A', strtotime($queue['ended_at'])) : '-'; ?></p>
                     </div>
                 <?php endforeach; ?>
             <?php endif; ?>

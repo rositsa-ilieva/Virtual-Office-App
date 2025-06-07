@@ -86,20 +86,30 @@ $stmt->execute([$queue_id]);
 $members = $stmt->fetchAll();
 
 // Calculate estimated start times for all waiting students if not set
-$current_time = new DateTime();
 $meeting_duration = $queue['default_duration'] ?? 15; // in minutes
 
-// Find the last in-meeting student's start time
-$stmt2 = $pdo->prepare("SELECT started_at FROM queue_entries WHERE queue_id = ? AND status = 'in_meeting' ORDER BY started_at DESC LIMIT 1");
+// Find the last in-meeting student's start time and position
+$stmt2 = $pdo->prepare("SELECT started_at, position FROM queue_entries WHERE queue_id = ? AND status = 'in_meeting' ORDER BY started_at DESC LIMIT 1");
 $stmt2->execute([$queue_id]);
 $last_meeting = $stmt2->fetch();
-$base_time = $last_meeting && $last_meeting['started_at'] ? new DateTime($last_meeting['started_at']) : $current_time;
+if ($last_meeting && $last_meeting['started_at']) {
+    $base_time = new DateTime($last_meeting['started_at']);
+    $base_position = $last_meeting['position'];
+} elseif (!empty($queue['start_time'])) {
+    $base_time = new DateTime($queue['start_time']);
+    $base_position = 1;
+} else {
+    $base_time = new DateTime();
+    $base_position = 1;
+}
 
 foreach ($members as $i => &$entry) {
     if ($entry['status'] === 'waiting') {
-        // Calculate estimated start time based on position
         $estimated = clone $base_time;
-        $estimated->add(new DateInterval('PT' . ($meeting_duration * $entry['position']) . 'M'));
+        $offset = ($entry['position'] - $base_position) * $meeting_duration;
+        if ($offset > 0) {
+            $estimated->add(new DateInterval('PT' . $offset . 'M'));
+        }
         $entry['estimated_start_time'] = $estimated->format('Y-m-d H:i:s');
     }
 }
