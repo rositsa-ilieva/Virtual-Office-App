@@ -74,3 +74,17 @@ CREATE TABLE IF NOT EXISTS temporary_invites (
   FOREIGN KEY (queue_entry_id) REFERENCES queue_entries(id),
   FOREIGN KEY (invited_user_id) REFERENCES users(id)
 );
+
+CREATE TABLE IF NOT EXISTS swap_requests (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    queue_id INT NOT NULL,
+    sender_id INT NOT NULL,
+    receiver_id INT NOT NULL,
+    status ENUM('pending', 'accepted', 'declined') DEFAULT 'pending',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (queue_id) REFERENCES queues(id),
+    FOREIGN KEY (sender_id) REFERENCES users(id),
+    FOREIGN KEY (receiver_id) REFERENCES users(id),
+    UNIQUE KEY unique_active_request (queue_id, sender_id, receiver_id, status)
+);

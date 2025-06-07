@@ -151,14 +151,21 @@ unset($queue);
                                     </div>
                                 <?php endif; ?>
                                 <?php if (isset($queue['user_status']) && $queue['user_status']): ?>
-                                    <div class="status-badge status-<?php echo htmlspecialchars($queue['user_status']); ?>">
-                                        <?php echo htmlspecialchars(ucfirst($queue['user_status'])); ?>
+                                    <div class="status-badge status-<?php echo $queue['user_status']; ?>">
+                                        <?php echo ucfirst($queue['user_status']); ?>
                                     </div>
                                 <?php endif; ?>
                                 <?php if (isset($queue['estimated_start_time']) && $queue['estimated_start_time']): ?>
-                                    <div class="queue-estimated-pill">
-                                        <i class="fas fa-hourglass-half"></i>
-                                        Est. <?php echo htmlspecialchars(date('g:i A', strtotime($queue['estimated_start_time']))); ?>
+                                    <div class="queue-estimated-pill">Est. <?php echo date('g:i A', strtotime($queue['estimated_start_time'])); ?></div>
+                                <?php endif; ?>
+                                <?php if ($queue['user_status'] === 'waiting'): ?>
+                                    <div class="swap-requests" data-queue-id="<?php echo $queue['id']; ?>">
+                                        <div class="swap-status"></div>
+                                        <div class="swap-actions">
+                                            <button class="btn btn-secondary swap-btn" onclick="showSwapModal(<?php echo $queue['id']; ?>)">
+                                                Request Swap
+                                            </button>
+                                        </div>
                                     </div>
                                 <?php endif; ?>
                                 <?php if (!empty($queue['meeting_link'])): ?>
@@ -225,6 +232,148 @@ unset($queue);
             setTimeout(function() { btn.textContent = 'Copy'; }, 1200);
         });
     }
+
+    // Swap request functions
+    function showSwapModal(queueId) {
+        // Get list of students in queue
+        fetch('queue-members.php?id=' + queueId)
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    alert(data.error);
+                    return;
+                }
+                
+                // Create modal with list of students
+                const modal = document.createElement('div');
+                modal.className = 'modal';
+                modal.innerHTML = `
+                    <div class="modal-content">
+                        <h3>Request Swap With</h3>
+                        <div class="student-list">
+                            ${data.members.map(member => `
+                                <div class="student-item">
+                                    <span>${member.name}</span>
+                                    <button onclick="sendSwapRequest(${queueId}, ${member.id})">
+                                        Request Swap
+                                    </button>
+                                </div>
+                            `).join('')}
+                        </div>
+                        <button onclick="this.parentElement.parentElement.remove()">Close</button>
+                    </div>
+                `;
+                document.body.appendChild(modal);
+            });
+    }
+
+    function sendSwapRequest(queueId, receiverId) {
+        const formData = new FormData();
+        formData.append('action', 'send');
+        formData.append('queue_id', queueId);
+        formData.append('receiver_id', receiverId);
+
+        fetch('swap-request.php', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                alert(data.error);
+            } else {
+                alert('Swap request sent successfully');
+                updateSwapStatus(queueId);
+            }
+        });
+    }
+
+    function updateSwapStatus(queueId) {
+        const formData = new FormData();
+        formData.append('action', 'get_status');
+        formData.append('queue_id', queueId);
+
+        fetch('swap-request.php', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                console.error(data.error);
+                return;
+            }
+
+            const swapStatus = document.querySelector(`.swap-requests[data-queue-id="${queueId}"] .swap-status`);
+            if (!swapStatus) return;
+
+            let statusHtml = '';
+            
+            // Show received requests
+            if (data.received_requests.length > 0) {
+                statusHtml += '<div class="received-requests">';
+                data.received_requests.forEach(request => {
+                    statusHtml += `
+                        <div class="swap-request">
+                            <span>${request.sender_name} wants to swap positions</span>
+                            <button onclick="handleSwapRequest(${request.id}, 'accept')">Accept</button>
+                            <button onclick="handleSwapRequest(${request.id}, 'decline')">Decline</button>
+                        </div>
+                    `;
+                });
+                statusHtml += '</div>';
+            }
+
+            // Show sent requests
+            if (data.sent_requests.length > 0) {
+                statusHtml += '<div class="sent-requests">';
+                data.sent_requests.forEach(request => {
+                    statusHtml += `
+                        <div class="swap-request">
+                            <span>Swap request sent to ${request.receiver_name}</span>
+                            <span class="status-badge">Pending</span>
+                        </div>
+                    `;
+                });
+                statusHtml += '</div>';
+            }
+
+            swapStatus.innerHTML = statusHtml;
+        });
+    }
+
+    function handleSwapRequest(requestId, action) {
+        const formData = new FormData();
+        formData.append('action', action);
+        formData.append('request_id', requestId);
+
+        fetch('swap-request.php', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                alert(data.error);
+            } else {
+                alert(action === 'accept' ? 'Swap request accepted' : 'Swap request declined');
+                // Refresh the page to show updated queue positions
+                location.reload();
+            }
+        });
+    }
+
+    // Update swap status every 30 seconds
+    setInterval(() => {
+        document.querySelectorAll('.swap-requests').forEach(el => {
+            updateSwapStatus(el.dataset.queueId);
+        });
+    }, 30000);
+
+    // Initial update of swap status
+    document.querySelectorAll('.swap-requests').forEach(el => {
+        updateSwapStatus(el.dataset.queueId);
+    });
     </script>
 </body>
 </html>
