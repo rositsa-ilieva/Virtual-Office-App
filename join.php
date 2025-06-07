@@ -39,7 +39,7 @@ $success = '';
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $comment = $_POST['comment'] ?? '';
-    $is_comment_public = isset($_POST['is_comment_public']) ? 1 : 0;
+    $is_comment_public = isset($_POST['is_comment_public']) ? (int)$_POST['is_comment_public'] : 0;
 
     // Get next position
     $stmt = $pdo->prepare('SELECT MAX(position) as max_pos FROM queue_entries WHERE queue_id = ?');
@@ -106,9 +106,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     <textarea id="comment" name="comment" rows="3"></textarea>
                 </div>
                 <div class="form-group">
-                    <label>Comment Visibility:</label>
-                    <label><input type="radio" name="is_comment_public" value="1" checked> Public (visible to all)</label>
-                    <label><input type="radio" name="is_comment_public" value="0"> Private (only teacher can see)</label>
+                    <label for="is_comment_public">Comment Visibility:</label>
+                    <select id="is_comment_public" name="is_comment_public" required>
+                        <option value="0" selected>Visible to teacher only</option>
+                        <option value="1">Visible to all (students + teacher)</option>
+                    </select>
                 </div>
                 <button type="submit" class="btn">Join Queue</button>
             </form>

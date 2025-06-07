@@ -161,38 +161,49 @@ unset($entry);
             </div>
         </nav>
 
-        <div class="queue-container">
-            <div class="queue-header">
-                <h2>Current Queue</h2>
-                <?php if ($queue['is_automatic']): ?>
-                    <span class="badge badge-info">Automatic Time Slots</span>
+        <!-- Sticky Queue Info Bar -->
+        <div class="queue-info-bar" style="position:sticky;top:0;z-index:10;background:#fff;padding:18px 24px 12px 24px;border-radius:12px;box-shadow:0 2px 8px rgba(40,83,107,0.07);margin-bottom:24px;display:flex;align-items:center;gap:32px;flex-wrap:wrap;">
+            <div>
+                <strong>Queue:</strong> <?php echo htmlspecialchars($queue['purpose']); ?>
+                <?php if (!empty($queue['description'])): ?>
+                    <span style="color:#888;font-style:italic;margin-left:12px;">(<?php echo htmlspecialchars($queue['description']); ?>)</span>
                 <?php endif; ?>
             </div>
+            <div><strong>Type:</strong> <?php echo htmlspecialchars($queue['meeting_type']); ?></div>
+            <div><strong>Default Duration:</strong> <?php echo htmlspecialchars($queue['default_duration']); ?> min</div>
+            <div><strong>Status:</strong> <?php echo $queue['is_active'] ? '<span style=\'color:#22C55E\'>Active</span>' : '<span style=\'color:#F87171\'>Inactive</span>'; ?></div>
+            <?php if ($queue['is_automatic']): ?>
+                <span class="badge badge-info">Automatic Time Slots</span>
+            <?php endif; ?>
+        </div>
 
+        <!-- Current Students Section -->
+        <div class="section-box" style="background:#F8FAFC;padding:24px 18px 18px 18px;border-radius:12px;margin-bottom:32px;box-shadow:0 2px 8px rgba(40,83,107,0.04);">
+            <h2 style="margin-top:0;margin-bottom:18px;">Current Students</h2>
             <div class="queue-list">
                 <?php if (empty($entries)): ?>
                     <p class="no-entries">No students in queue</p>
                 <?php else: ?>
                     <?php foreach ($entries as $entry): ?>
-                        <div class="queue-item">
-                            <div class="student-info">
-                                <span class="student-name"><?php echo htmlspecialchars($entry['student_name']); ?></span>
+                        <div class="queue-item" style="background:#fff;border-radius:8px;padding:18px 16px;margin-bottom:14px;box-shadow:0 1px 4px rgba(40,83,107,0.06);display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap;">
+                            <div class="student-info" style="flex:1;min-width:180px;">
+                                <span class="student-name" style="font-weight:600;font-size:1.1em;">👤 <?php echo htmlspecialchars($entry['student_name']); ?></span>
                                 <?php if ($entry['status'] === 'waiting'): ?>
-                                    <span class="position">Position: <?php echo $entry['position']; ?></span>
+                                    <span class="position" style="margin-left:10px;color:#2563EB;">Position: <?php echo $entry['position']; ?></span>
                                 <?php endif; ?>
                                 <?php if ($entry['comment']): ?>
-                                    <span class="comment"><?php echo htmlspecialchars($entry['comment']); ?></span>
+                                    <span class="comment" style="display:block;color:#888;margin-top:4px;"><?php echo htmlspecialchars($entry['comment']); ?></span>
                                 <?php endif; ?>
                             </div>
-                            <div class="status-badge status-<?php echo $entry['status']; ?>">
+                            <div class="status-badge status-<?php echo $entry['status']; ?>" style="min-width:90px;text-align:center;">
                                 <?php echo ucfirst($entry['status']); ?>
                             </div>
                             <?php if ($entry['status'] === 'waiting'): ?>
-                                <div class="estimated-time">
-                                    Est. Start: <?php echo date('g:i A', strtotime($entry['estimated_start_time'])); ?>
+                                <div class="estimated-time" style="min-width:120px;color:#555;">
+                                    <i class="fas fa-clock"></i> Est. Start: <?php echo date('g:i A', strtotime($entry['estimated_start_time'])); ?>
                                 </div>
                             <?php endif; ?>
-                            <div class="actions">
+                            <div class="actions" style="display:flex;gap:10px;align-items:center;">
                                 <?php if ($entry['status'] === 'waiting'): ?>
                                     <?php if (!$in_meeting_entry): ?>
                                         <?php if ($show_start_form == $entry['id']): ?>
@@ -211,11 +222,6 @@ unset($entry);
                                     <?php else: ?>
                                         <button class="btn btn-primary" disabled>Start Meeting</button>
                                     <?php endif; ?>
-                                    <form method="POST" style="display: inline;" onsubmit="return confirmAction('skip', '<?php echo htmlspecialchars($entry['student_name']); ?>')">
-                                        <input type="hidden" name="entry_id" value="<?php echo $entry['id']; ?>">
-                                        <input type="hidden" name="action" value="skip">
-                                        <button type="submit" class="btn btn-warning">Skip</button>
-                                    </form>
                                 <?php elseif ($entry['status'] === 'in_meeting'): ?>
                                     <form method="POST" style="display: inline;" onsubmit="return confirmAction('end', '<?php echo htmlspecialchars($entry['student_name']); ?>')">
                                         <input type="hidden" name="entry_id" value="<?php echo $entry['id']; ?>">
@@ -228,54 +234,62 @@ unset($entry);
                                     <input type="hidden" name="action" value="remove">
                                     <button type="submit" class="btn btn-danger">Remove</button>
                                 </form>
+                                <?php if ($entry['status'] === 'waiting'): ?>
+                                    <form method="POST" style="display: inline;" onsubmit="return confirmAction('skip', '<?php echo htmlspecialchars($entry['student_name']); ?>')">
+                                        <input type="hidden" name="entry_id" value="<?php echo $entry['id']; ?>">
+                                        <input type="hidden" name="action" value="skip">
+                                        <button type="submit" class="btn btn-warning">Skip</button>
+                                    </form>
+                                <?php endif; ?>
                             </div>
                         </div>
                     <?php endforeach; ?>
                 <?php endif; ?>
             </div>
-            <!-- Past Students Section -->
-            <div class="queue-list" style="margin-top:32px;">
-                <h2>Past Students</h2>
-                <?php if (empty($past_entries)): ?>
-                    <p class="no-entries">No past students.</p>
-                <?php else: ?>
-                    <table class="schedule-table">
-                        <thead>
+        </div>
+
+        <!-- Past Students Section -->
+        <div class="queue-list" style="margin-top:32px;">
+            <h2>Past Students</h2>
+            <?php if (empty($past_entries)): ?>
+                <p class="no-entries">No past students.</p>
+            <?php else: ?>
+                <table class="schedule-table">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Status</th>
+                            <th>Started</th>
+                            <th>Ended</th>
+                            <th>Duration</th>
+                            <th>Comment</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($past_entries as $entry): ?>
                             <tr>
-                                <th>Name</th>
-                                <th>Status</th>
-                                <th>Started</th>
-                                <th>Ended</th>
-                                <th>Duration</th>
-                                <th>Comment</th>
+                                <td><?php echo htmlspecialchars($entry['student_name']); ?></td>
+                                <td><?php echo ucfirst($entry['status']); ?></td>
+                                <td><?php echo $entry['started_at'] ? date('M j, Y g:i A', strtotime($entry['started_at'])) : '-'; ?></td>
+                                <td><?php echo $entry['ended_at'] ? date('M j, Y g:i A', strtotime($entry['ended_at'])) : '-'; ?></td>
+                                <td>
+                                    <?php
+                                    if ($entry['started_at'] && $entry['ended_at']) {
+                                        $start = strtotime($entry['started_at']);
+                                        $end = strtotime($entry['ended_at']);
+                                        $duration = round(($end - $start) / 60, 1);
+                                        echo $duration . ' min';
+                                    } else {
+                                        echo '-';
+                                    }
+                                    ?>
+                                </td>
+                                <td><?php echo htmlspecialchars($entry['comment']); ?></td>
                             </tr>
-                        </thead>
-                        <tbody>
-                            <?php foreach ($past_entries as $entry): ?>
-                                <tr>
-                                    <td><?php echo htmlspecialchars($entry['student_name']); ?></td>
-                                    <td><?php echo ucfirst($entry['status']); ?></td>
-                                    <td><?php echo $entry['started_at'] ? date('M j, Y g:i A', strtotime($entry['started_at'])) : '-'; ?></td>
-                                    <td><?php echo $entry['ended_at'] ? date('M j, Y g:i A', strtotime($entry['ended_at'])) : '-'; ?></td>
-                                    <td>
-                                        <?php
-                                        if ($entry['started_at'] && $entry['ended_at']) {
-                                            $start = strtotime($entry['started_at']);
-                                            $end = strtotime($entry['ended_at']);
-                                            $duration = round(($end - $start) / 60, 1);
-                                            echo $duration . ' min';
-                                        } else {
-                                            echo '-';
-                                        }
-                                        ?>
-                                    </td>
-                                    <td><?php echo htmlspecialchars($entry['comment']); ?></td>
-                                </tr>
-                            <?php endforeach; ?>
-                        </tbody>
-                    </table>
-                <?php endif; ?>
-            </div>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            <?php endif; ?>
         </div>
     </div>
 </body>

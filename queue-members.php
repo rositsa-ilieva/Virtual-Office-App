@@ -241,6 +241,22 @@ try {
     }
 }
 
+// Calculate dynamic position for the current user
+function getStudentPosition($members, $user_id) {
+    $pos = 1;
+    foreach ($members as $entry) {
+        if ($entry['student_id'] == $user_id) {
+            return $pos;
+        }
+        if (in_array($entry['status'], ['waiting'])) {
+            $pos++;
+        }
+    }
+    return $pos;
+}
+
+$current_user_position = getStudentPosition($members, $user_id);
+
 ?>
 <!DOCTYPE html>
 <html lang='en'>
@@ -291,7 +307,13 @@ try {
                     <tbody>
                         <?php foreach ($members as $entry): ?>
                             <tr>
-                                <td><?php echo $entry['position']; ?></td>
+                                <td>
+                                    <?php if ($entry['student_id'] == $user_id): ?>
+                                        <?php echo $current_user_position; ?>
+                                    <?php else: ?>
+                                        <?php echo $entry['position']; ?>
+                                    <?php endif; ?>
+                                </td>
                                 <td><?php echo htmlspecialchars($entry['student_name']); ?></td>
                                 <td><?php echo ucfirst($entry['status']); ?></td>
                                 <td><?php echo $entry['estimated_start_time'] ? date('g:i A', strtotime($entry['estimated_start_time'])) : '-'; ?></td>
@@ -306,11 +328,11 @@ try {
                 </table>
             <?php endif; ?>
         </div>
-        <!-- Past Meetings Section -->
+        <!-- Students who already went Section -->
         <div class='members-container' style='margin-top:32px;'>
-            <h2>Past Meetings</h2>
+            <h2>Students who already went</h2>
             <?php if (empty($past_meetings)): ?>
-                <p>No past meetings.</p>
+                <p>No students have completed their meeting yet.</p>
             <?php else: ?>
                 <table class='schedule-table'>
                     <thead>

@@ -117,9 +117,11 @@ if (isset($_GET['message']) && $_GET['message'] === 'joined') {
         </nav>
 
         <div class="dashboard">
-            <div class="dashboard-header">
-            <h2><?php echo $user['role'] === 'teacher' ? 'Your Queues' : 'Available Queues'; ?></h2>
-                <div class="queue-filters">
+            <div class="dashboard-header" style="display: flex; justify-content: space-between; align-items: center; gap: 24px; flex-wrap: wrap;">
+                <?php if ($filter !== 'past'): ?>
+                    <h2 style="margin: 0;"><?php echo $user['role'] === 'teacher' ? 'Your Queues' : 'Available Queues'; ?></h2>
+                <?php endif; ?>
+                <div class="queue-filters" style="margin-left: auto;">
                     <a href="?filter=upcoming" class="filter-btn <?php echo $filter === 'upcoming' ? 'active' : ''; ?>">
                         <i class="fas fa-calendar-alt"></i>
                         Upcoming Meetings
@@ -147,13 +149,34 @@ if (isset($_GET['message']) && $_GET['message'] === 'joined') {
                         <div class="queue-card">
                             <div class="queue-info-group">
                                 <div class="queue-title"><?php echo htmlspecialchars($queue['purpose'] ?? 'Untitled Queue'); ?></div>
+                                <?php if (!empty($queue['description'])): ?>
+                                    <div class="queue-meta">Description: <?php echo htmlspecialchars($queue['description']); ?></div>
+                                <?php endif; ?>
+                                <?php if (!empty($queue['meeting_type'])): ?>
+                                    <div class="queue-meta">
+                                        <i class="fas fa-video"></i>
+                                        <?php echo htmlspecialchars($queue['meeting_type']); ?>
+                                    </div>
+                                <?php endif; ?>
+                                <?php if (!empty($queue['wait_time_method'])): ?>
+                                    <div class="queue-meta">
+                                        <i class="fas fa-clock"></i>
+                                        <?php echo htmlspecialchars(ucfirst($queue['wait_time_method'])); ?>
+                                    </div>
+                                <?php endif; ?>
                                 <div class="queue-meta">Teacher: <?php echo htmlspecialchars($queue['teacher_name'] ?? ''); ?></div>
                                 <div class="queue-meta">Status: <span class="status-badge status-<?php echo $queue['user_status']; ?>"><?php echo ucfirst($queue['user_status']); ?></span></div>
                                 <div class="queue-meta">Date: <?php echo $queue['ended_at'] ? date('M j, Y', strtotime($queue['ended_at'])) : '-'; ?></div>
                                 <div class="queue-meta">Time: <?php echo $queue['ended_at'] ? date('g:i A', strtotime($queue['ended_at'])) : '-'; ?></div>
-                                <?php if (!empty($queue['comment']) && $queue['is_comment_public']): ?>
-                                    <div class="queue-meta">Note: <?php echo htmlspecialchars($queue['comment']); ?></div>
+                                <?php if ($queue['started_at'] && $queue['ended_at']): ?>
+                                    <div class="queue-meta"><i class="fas fa-hourglass-end"></i> Duration: <?php echo round((strtotime($queue['ended_at']) - strtotime($queue['started_at'])) / 60, 1); ?> min</div>
                                 <?php endif; ?>
+                                <?php if (!empty($queue['comment']) && $queue['is_comment_public']): ?>
+                                    <div class="queue-meta"><i class="fas fa-sticky-note"></i> Note: <?php echo htmlspecialchars($queue['comment']); ?></div>
+                                <?php endif; ?>
+                            </div>
+                            <div class="queue-action-group">
+                                <span class="stat"><i class="fas fa-history"></i> Past Meeting</span>
                             </div>
                         </div>
                     <?php endforeach; ?>
