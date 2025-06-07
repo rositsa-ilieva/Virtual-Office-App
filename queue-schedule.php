@@ -1,80 +1,65 @@
 <?php
 session_start();
 require_once 'db.php';
+if (!isset($_SESSION['user_id'])) { header('Location: login.php'); exit(); }
 
-if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'student') {
-    header('Location: login.php');
-    exit();
-}
+$user_id = $_SESSION['user_id'];
+$user_role = $_SESSION['user_role'] ?? 'student';
+$stmt = $pdo->prepare('SELECT * FROM users WHERE id = ?');
+$stmt->execute([$user_id]);
+$user = $stmt->fetch();
 
-$queue_id = $_GET['id'] ?? null;
-if (!$queue_id) {
-    header('Location: index.php');
-    exit();
-}
-
-// Get queue info
-$stmt = $pdo->prepare('SELECT * FROM queues WHERE id = ?');
-$stmt->execute([$queue_id]);
-$queue = $stmt->fetch();
-if (!$queue) {
-    header('Location: index.php');
-    exit();
-}
-
-// Get all waiting students in this queue
-$sql = "SELECT qe.position, qe.estimated_start_time, u.name as student_name
-        FROM queue_entries qe
-        JOIN users u ON qe.student_id = u.id
-        WHERE qe.queue_id = ? AND qe.status = 'waiting'
-        ORDER BY qe.position ASC";
-$stmt = $pdo->prepare($sql);
-$stmt->execute([$queue_id]);
-$waiting = $stmt->fetchAll();
-
+ob_start();
 ?>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Queue Schedule - Virtual Office Queue</title>
-    <link rel="stylesheet" href="style.css">
-</head>
-<body>
-    <div class="container">
-        <nav class="navbar">
-            <h1>Queue Schedule: <?php echo htmlspecialchars($queue['purpose']); ?></h1>
-            <div class="nav-links">
-                <a href="index.php" class="btn btn-secondary">Dashboard</a>
-                <a href="logout.php" class="btn btn-danger">Logout</a>
+<h2>Upcoming Events</h2>
+<div class="mt-4">
+    <div class="row g-4">
+        <?php
+        // Get upcoming queues
+        $sql = "SELECT q.*, 
+                       (SELECT COUNT(*) FROM queue_entries WHERE queue_id = q.id AND status = 'waiting') as waiting_count,
+                       (SELECT position FROM queue_entries WHERE queue_id = q.id AND student_id = ?) as my_position
+                FROM queues q
+                WHERE q.start_time > NOW()
+                ORDER BY q.start_time ASC
+                LIMIT 10";
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute([$user_id]);
+        $upcoming_queues = $stmt->fetchAll();
+
+        if (empty($upcoming_queues)): ?>
+            <div class="col-12">
+                <div class="alert alert-info">
+                    No upcoming events found.
+                </div>
             </div>
-        </nav>
-        <div class="schedule-container">
-            <h2>Current Waiting List</h2>
-            <?php if (empty($waiting)): ?>
-                <p>No students are currently waiting in this queue.</p>
-            <?php else: ?>
-                <table class="schedule-table">
-                    <thead>
-                        <tr>
-                            <th>Position</th>
-                            <th>Name</th>
-                            <th>Estimated Start Time</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php foreach ($waiting as $entry): ?>
-                            <tr>
-                                <td><?php echo $entry['position']; ?></td>
-                                <td><?php echo htmlspecialchars($entry['student_name']); ?></td>
-                                <td><?php echo $entry['estimated_start_time'] ? date('g:i A', strtotime($entry['estimated_start_time'])) : '-'; ?></td>
-                            </tr>
-                        <?php endforeach; ?>
-                    </tbody>
-                </table>
-            <?php endif; ?>
-        </div>
+        <?php else:
+            foreach ($upcoming_queues as $queue): ?>
+                <div class="col-md-6">
+                    <div class="card shadow-sm">
+                        <div class="card-body">
+                            <h5 class="card-title"><?php echo htmlspecialchars($queue['purpose']); ?></h5>
+                            <p class="card-text">
+                                <strong>Date:</strong> <?php echo date('M d, Y', strtotime($queue['start_time'])); ?><br>
+                                <strong>Time:</strong> <?php echo date('g:i A', strtotime($queue['start_time'])); ?><br>
+                                <strong>Waiting:</strong> <?php echo $queue['waiting_count']; ?> students<br>
+                                <?php if ($queue['my_position']): ?>
+                                    <strong>Your Position:</strong> <?php echo $queue['my_position']; ?>
+                                <?php endif; ?>
+                            </p>
+                            <?php if (!$queue['my_position']): ?>
+                                <a href="join.php?id=<?php echo $queue['id']; ?>" class="btn btn-primary">
+                                    Join Queue
+                                </a>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                </div>
+            <?php endforeach;
+        endif; ?>
     </div>
-</body>
-</html> 
+</div>
+<?php
+$content = ob_get_clean();
+require 'layout.php';
+?> 

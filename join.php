@@ -62,7 +62,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 VALUES (?, ?, ?, ?, ?, ?)";
         $stmt = $pdo->prepare($sql);
         if ($stmt->execute([$queue_id, $user_id, $comment, $is_comment_public, $position, $estimated_start_time])) {
-            header('Location: index.php?message=joined');
+            header('Location: queue-members.php?id=' . $queue_id);
             exit();
         } else {
             $error = 'Failed to join queue. Please try again.';
@@ -71,50 +71,54 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $error = 'An error occurred. Please try again.';
     }
 }
+
+ob_start();
 ?>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Join Queue - Virtual Office Queue</title>
-    <link rel="stylesheet" href="style.css">
-</head>
-<body>
-    <div class="container">
-        <nav class="navbar">
-            <h1>Join Queue</h1>
-            <div class="nav-links">
-                <a href="index.php" class="btn btn-secondary">Back to Dashboard</a>
+<h2>Join Queue: <?php echo htmlspecialchars($queue['purpose']); ?></h2>
+<div class="row mt-4">
+    <div class="col-md-7">
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <form method="POST" action="">
+                    <div class="mb-3">
+                        <label for="comment" class="form-label">Comment (Optional):</label>
+                        <textarea id="comment" name="comment" class="form-control" rows="3"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="is_comment_public" class="form-label">Comment Visibility:</label>
+                        <select id="is_comment_public" name="is_comment_public" class="form-select" required>
+                            <option value="0" selected>Visible to teacher only</option>
+                            <option value="1">Visible to all (students + teacher)</option>
+                        </select>
+                    </div>
+                    <?php if ($error): ?>
+                        <div class="alert alert-danger"><?php echo htmlspecialchars($error); ?></div>
+                    <?php endif; ?>
+                    <?php if ($success): ?>
+                        <div class="alert alert-success"><?php echo htmlspecialchars($success); ?></div>
+                    <?php endif; ?>
+                    <button type="submit" class="btn btn-primary">Join Queue</button>
+                </form>
             </div>
-        </nav>
-
-        <div class="form-container">
-            <h2>Join Queue: <?php echo htmlspecialchars($queue['purpose']); ?></h2>
-            
-            <?php if ($error): ?>
-                <div class="error"><?php echo htmlspecialchars($error); ?></div>
-            <?php endif; ?>
-            
-            <?php if ($success): ?>
-                <div class="success"><?php echo htmlspecialchars($success); ?></div>
-            <?php endif; ?>
-
-            <form method="POST" action="">
-                <div class="form-group">
-                    <label for="comment">Comment (Optional):</label>
-                    <textarea id="comment" name="comment" rows="3"></textarea>
-                </div>
-                <div class="form-group">
-                    <label for="is_comment_public">Comment Visibility:</label>
-                    <select id="is_comment_public" name="is_comment_public" required>
-                        <option value="0" selected>Visible to teacher only</option>
-                        <option value="1">Visible to all (students + teacher)</option>
-                    </select>
-                </div>
-                <button type="submit" class="btn">Join Queue</button>
-            </form>
         </div>
     </div>
-</body>
-</html>
+    <div class="col-md-5">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title">Queue Information</h5>
+                <p><strong>Purpose:</strong> <?php echo htmlspecialchars($queue['purpose']); ?></p>
+                <p><strong>Start Time:</strong> <?php echo date('M d, Y g:i A', strtotime($queue['start_time'])); ?></p>
+                <p><strong>Duration:</strong> <?php echo $queue['default_duration'] ?? 15; ?> min per student</p>
+                <p><strong>Max Students:</strong> <?php echo $queue['max_students'] ?? '-'; ?></p>
+                <p><strong>Meeting Link:</strong> <a href="<?php echo htmlspecialchars($queue['meeting_link']); ?>" target="_blank"><?php echo htmlspecialchars($queue['meeting_link']); ?></a></p>
+                <?php if (!empty($queue['access_code'])): ?>
+                    <p><strong>Access Code:</strong> <?php echo htmlspecialchars($queue['access_code']); ?></p>
+                <?php endif; ?>
+            </div>
+        </div>
+    </div>
+</div>
+<?php
+$content = ob_get_clean();
+require 'layout.php';
+?>

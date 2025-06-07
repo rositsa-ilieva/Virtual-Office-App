@@ -42,33 +42,33 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - Virtual Office Queue</title>
-    <link rel="stylesheet" href="style.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
+    <style>body { background: #f7f9fb; }</style>
 </head>
 <body>
-    <div class="container">
-        <div class="form-container">
-            <h1>Login</h1>
+    <div class="container" style="max-width:400px;margin-top:80px;">
+        <div class="card p-4 shadow">
+            <h2 class="mb-4 text-center">Login</h2>
             <?php if ($error): ?>
-                <div class="error"><?php echo htmlspecialchars($error); ?></div>
+                <div class="alert alert-danger"><?php echo htmlspecialchars($error); ?></div>
             <?php endif; ?>
             <?php if ($success): ?>
-                <div class="success" style="background:#d4edda;color:#155724;border:1.5px solid #c3e6cb;padding:12px 18px;border-radius:8px;margin-bottom:18px;font-weight:600;text-align:center;">
-                    <?php echo htmlspecialchars($success); ?>
-                </div>
+                <div class="alert alert-success"><?php echo htmlspecialchars($success); ?></div>
             <?php endif; ?>
-            <form method="POST" action="">
-                <div class="form-group">
-                    <label for="email">Email:</label>
-                    <input type="email" id="email" name="email" required>
+            <form method="POST">
+                <div class="mb-3">
+                    <label class="form-label">Email</label>
+                    <input type="email" name="email" class="form-control" required>
                 </div>
-                <div class="form-group">
-                    <label for="password">Password:</label>
-                    <input type="password" id="password" name="password" required>
+                <div class="mb-3">
+                    <label class="form-label">Password</label>
+                    <input type="password" name="password" class="form-control" required>
                 </div>
-                <button type="submit" class="btn">Login</button>
+                <button type="submit" class="btn btn-primary w-100">Login</button>
             </form>
-            <div class="form-footer">
-                <p>Don't have an account? <a href="register.php">Register here</a></p>
+            <div class="mt-3 text-center">
+                <a href="register.php">Don't have an account? Register</a>
             </div>
         </div>
     </div>

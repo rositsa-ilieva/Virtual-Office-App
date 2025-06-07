@@ -257,169 +257,88 @@ function getStudentPosition($members, $user_id) {
 
 $current_user_position = getStudentPosition($members, $user_id);
 
-?>
-<!DOCTYPE html>
-<html lang='en'>
-<head>
-    <meta charset='UTF-8'>
-    <meta name='viewport' content='width=device-width, initial-scale=1.0'>
-    <title>Queue Members - Virtual Office Queue</title>
-    <link rel='stylesheet' href='style.css'>
-</head>
-<body>
-    <div class='container'>
-        <nav class='navbar'>
-            <h1>Queue Members: <?php echo htmlspecialchars($queue['purpose']); ?></h1>
-            <div class='nav-links'>
-                <a href='index.php' class='btn btn-secondary'>Dashboard</a>
-                <a href='logout.php' class='btn btn-danger'>Logout</a>
-            </div>
-        </nav>
-        <div class='members-container'>
-            <h2>Current Members</h2>
-            <?php
-            $show_end_button = false;
-            foreach ($members as $entry) {
-                if ($entry['student_id'] == $user_id && $entry['status'] === 'in_meeting') {
-                    $show_end_button = true;
-                    break;
-                }
-            }
-            ?>
-            <?php if ($show_end_button): ?>
-                <form method="POST" style="margin-bottom: 1em;">
-                    <button type="submit" name="end_meeting" class="btn btn-success">End My Meeting</button>
-                </form>
-            <?php endif; ?>
-            <?php if (empty($members)): ?>
-                <p>No students are currently in this queue.</p>
-            <?php else: ?>
-                <table class='schedule-table'>
-                    <thead>
-                        <tr>
-                            <th>Position</th>
-                            <th>Name</th>
-                            <th>Status</th>
-                            <th>Estimated Start Time</th>
-                            <th>Comment</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php foreach ($members as $entry): ?>
-                            <tr>
-                                <td>
-                                    <?php if ($entry['student_id'] == $user_id): ?>
-                                        <?php echo $current_user_position; ?>
-                                    <?php else: ?>
-                                        <?php echo $entry['position']; ?>
-                                    <?php endif; ?>
-                                </td>
-                                <td><?php echo htmlspecialchars($entry['student_name']); ?></td>
-                                <td><?php echo ucfirst($entry['status']); ?></td>
-                                <td><?php echo $entry['estimated_start_time'] ? date('g:i A', strtotime($entry['estimated_start_time'])) : '-'; ?></td>
-                                <td>
-                                    <?php if ($entry['is_comment_public']): ?>
-                                        <?php echo htmlspecialchars($entry['comment']); ?>
-                                    <?php endif; ?>
-                                </td>
-                            </tr>
-                        <?php endforeach; ?>
-                    </tbody>
-                </table>
-            <?php endif; ?>
-        </div>
-        <!-- Students who already went Section -->
-        <div class='members-container' style='margin-top:32px;'>
-            <h2>Students who already went</h2>
-            <?php if (empty($past_meetings)): ?>
-                <p>No students have completed their meeting yet.</p>
-            <?php else: ?>
-                <table class='schedule-table'>
-                    <thead>
-                        <tr>
-                            <th>Name</th>
-                            <th>Status</th>
-                            <th>Started</th>
-                            <th>Ended</th>
-                            <th>Duration</th>
-                            <th>Comment</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php foreach ($past_meetings as $entry): ?>
-                            <tr>
-                                <td><?php echo htmlspecialchars($entry['student_name']); ?></td>
-                                <td><?php echo ucfirst($entry['status']); ?></td>
-                                <td><?php echo $entry['started_at'] ? date('M j, Y g:i A', strtotime($entry['started_at'])) : '-'; ?></td>
-                                <td><?php echo $entry['ended_at'] ? date('M j, Y g:i A', strtotime($entry['ended_at'])) : '-'; ?></td>
-                                <td>
-                                    <?php
-                                    if ($entry['started_at'] && $entry['ended_at']) {
-                                        $start = strtotime($entry['started_at']);
-                                        $end = strtotime($entry['ended_at']);
-                                        $duration = round(($end - $start) / 60, 1);
-                                        echo $duration . ' min';
-                                    } else {
-                                        echo '-';
-                                    }
-                                    ?>
-                                </td>
-                                <td>
-                                    <?php if ($entry['is_comment_public']): ?>
-                                        <?php echo htmlspecialchars($entry['comment']); ?>
-                                    <?php endif; ?>
-                                </td>
-                            </tr>
-                        <?php endforeach; ?>
-                    </tbody>
-                </table>
-            <?php endif; ?>
-        </div>
-        <?php
-        // Show Mark as Away/Return button for logged-in student
-        foreach ($members as $entry) {
-            if ($entry['student_id'] == $user_id) {
-                if ($entry['status'] === 'waiting') {
-                    echo '<form method="POST" style="margin-bottom:1em;"><button type="submit" name="mark_away" class="btn btn-warning">Mark as Away</button></form>';
-                } elseif ($entry['status'] === 'away') {
-                    echo '<form method="POST" style="margin-bottom:1em;"><button type="submit" name="return_queue" class="btn btn-primary">Return to Queue</button></form>';
-                }
-                break;
-            }
-        }
-        ?>
+$activePage = 'profile'; // in profile.php
+$activePage = 'events'; // in queue-schedule.php
+$activePage = 'notifications'; // in notifications.php
+$activePage = 'my-queues'; // in my-queues.php
+$activePage = 'history'; // in history.php
+$activePage = 'create-room'; // in create-room.php
 
-        <!-- Notifications Section -->
-        <?php if (!empty($notifications)): ?>
-            <div class="notifications-container">
-                <?php foreach ($notifications as $notification): ?>
-                    <div class="notification-card">
-                        <div class="notification-content">
-                            <p><strong><?php echo htmlspecialchars($notification['from_user_name']); ?></strong> 
-                               <?php echo htmlspecialchars($notification['message']); ?></p>
-                            <?php if ($notification['type'] === 'swap_request'): ?>
-                                <div class="notification-actions">
-                                    <form method="POST" style="display: inline;">
-                                        <input type="hidden" name="action" value="approve_swap">
-                                        <input type="hidden" name="notification_id" value="<?php echo $notification['id']; ?>">
-                                        <input type="hidden" name="queue_id" value="<?php echo $notification['related_queue_id']; ?>">
-                                        <input type="hidden" name="from_user_id" value="<?php echo $notification['related_user_id']; ?>">
-                                        <button type="submit" class="btn btn-success">Approve</button>
-                                    </form>
-                                    <form method="POST" style="display: inline;">
-                                        <input type="hidden" name="action" value="decline_swap">
-                                        <input type="hidden" name="notification_id" value="<?php echo $notification['id']; ?>">
-                                        <input type="hidden" name="queue_id" value="<?php echo $notification['related_queue_id']; ?>">
-                                        <input type="hidden" name="from_user_id" value="<?php echo $notification['related_user_id']; ?>">
-                                        <button type="submit" class="btn btn-danger">Decline</button>
-                                    </form>
-                                </div>
+ob_start();
+?>
+<h2>Queue: <?php echo htmlspecialchars($queue['purpose']); ?></h2>
+<div class="mb-4">
+    <strong>Your Position:</strong> <?php echo $current_user_position; ?>
+    <?php if (!empty($queue['meeting_link'])): ?>
+        <span class="ms-3"><a href="<?php echo htmlspecialchars($queue['meeting_link']); ?>" target="_blank" class="btn btn-success btn-sm">Open Meeting Link</a></span>
+    <?php endif; ?>
+</div>
+
+<?php
+// Show pending swap requests for the current user
+$pending_swaps = $pdo->prepare('SELECT n.*, u.name as from_user_name FROM notifications n JOIN users u ON n.related_user_id = u.id WHERE n.user_id = ? AND n.type = "swap_request" AND n.related_queue_id = ? AND n.is_read = 0 ORDER BY n.created_at DESC');
+$pending_swaps->execute([$user_id, $queue_id]);
+$swap_requests = $pending_swaps->fetchAll();
+if (!empty($swap_requests)) {
+    echo '<div class="alert alert-info mb-4"><strong>Swap Requests:</strong><ul class="mb-0">';
+    foreach ($swap_requests as $swap) {
+        echo '<li>' . htmlspecialchars($swap['from_user_name']) . ' wants to swap positions with you.';
+        echo '<form method="POST" style="display:inline-block;margin-left:10px;">';
+        echo '<input type="hidden" name="notification_id" value="' . $swap['id'] . '">';
+        echo '<input type="hidden" name="from_user_id" value="' . $swap['related_user_id'] . '">';
+        echo '<button type="submit" name="action" value="approve_swap" class="btn btn-success btn-sm">Approve</button> ';
+        echo '<button type="submit" name="action" value="decline_swap" class="btn btn-danger btn-sm">Decline</button>';
+        echo '</form></li>';
+    }
+    echo '</ul></div>';
+}
+?>
+<div class="table-responsive">
+    <table class="table table-bordered align-middle">
+        <thead class="table-light">
+            <tr>
+                <th>Position</th>
+                <th>Name</th>
+                <th>Status</th>
+                <th>Estimated Start</th>
+                <th>Comment</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+        <?php if (empty($members)): ?>
+            <tr><td colspan="6" class="text-center">No students currently in queue.</td></tr>
+        <?php else:
+            foreach ($members as $entry): ?>
+                <tr<?php if ($entry['student_id'] == $user_id) echo ' style="background:#e6f7ff;font-weight:bold;"'; ?>>
+                    <td><?php echo $entry['position']; ?></td>
+                    <td><?php echo htmlspecialchars($entry['student_name']); ?></td>
+                    <td><?php echo ucfirst($entry['status']); ?></td>
+                    <td><?php echo $entry['estimated_start_time'] ? date('g:i A', strtotime($entry['estimated_start_time'])) : '-'; ?></td>
+                    <td><?php echo $entry['is_comment_public'] || $entry['student_id'] == $user_id ? htmlspecialchars($entry['comment']) : '-'; ?></td>
+                    <td>
+                        <?php if ($entry['student_id'] == $user_id): ?>
+                            <?php if ($entry['status'] === 'waiting'): ?>
+                                <form method="POST" style="display:inline-block;"><button type="submit" name="mark_away" class="btn btn-warning btn-sm">Mark Away</button></form>
+                            <?php elseif ($entry['status'] === 'away'): ?>
+                                <form method="POST" style="display:inline-block;"><button type="submit" name="return_queue" class="btn btn-primary btn-sm">Return</button></form>
+                            <?php elseif ($entry['status'] === 'in_meeting'): ?>
+                                <form method="POST" style="display:inline-block;"><button type="submit" name="end_meeting" class="btn btn-success btn-sm">End Meeting</button></form>
                             <?php endif; ?>
-                        </div>
-                    </div>
-                <?php endforeach; ?>
-            </div>
-        <?php endif; ?>
-    </div>
-</body>
-</html> 
+                        <?php elseif ($entry['status'] === 'waiting' && $entry['student_id'] != $user_id): ?>
+                            <form method="POST" style="display:inline-block;">
+                                <input type="hidden" name="swap_with" value="<?php echo $entry['student_id']; ?>">
+                                <button type="submit" name="request_swap" class="btn btn-outline-primary btn-sm">Request Swap</button>
+                            </form>
+                        <?php endif; ?>
+                    </td>
+                </tr>
+            <?php endforeach;
+        endif; ?>
+        </tbody>
+    </table>
+</div>
+<?php
+// Optionally, show past meetings, swap requests, etc.
+$content = ob_get_clean();
+require 'layout.php'; 

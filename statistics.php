@@ -174,15 +174,13 @@ $stmt = $pdo->prepare('
 $stmt->execute([$queue_id]);
 $hourly_data = $stmt->fetchAll();
 
-// Format time display function
 function formatDuration($minutes) {
     if (!is_numeric($minutes) || $minutes < 0.1) {
         return '0 minutes';
     }
-    // Convert to hours and minutes
-    $totalMinutes = round((float)$minutes, 1); // Ensure float and round to 1 decimal place
-    $hours = round($totalMinutes / 60, 0); // Use round instead of (int) or floor
-    $mins = round($totalMinutes % 60, 1); // Keep as float with 1 decimal place
+    $totalMinutes = round((float)$minutes, 1);
+    $hours = round($totalMinutes / 60, 0);
+    $mins = round($totalMinutes % 60, 1);
     $parts = [];
     if ($hours > 0) {
         $parts[] = number_format($hours, 0) . ' hour' . ($hours > 1 ? 's' : '');
@@ -197,159 +195,88 @@ function formatExactTime($timestamp) {
     if (!$timestamp) return 'N/A';
     return date('M j, Y g:i:s A', strtotime($timestamp));
 }
+
+ob_start();
 ?>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Queue Statistics - Virtual Office Queue</title>
-    <link rel="stylesheet" href="style.css?v=2024.1">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-</head>
-<body>
-    <div class="container">
-        <nav class="navbar">
-            <h1>Queue Statistics</h1>
-            <div class="nav-links">
-                <a href="index.php" class="btn btn-secondary">Back to Dashboard</a>
-            </div>
-        </nav>
-
-        <div class="statistics-container">
-            <div class="stats-header">
-                <h2><?php echo htmlspecialchars($queue['purpose']); ?></h2>
-                <p class="queue-description"><?php echo htmlspecialchars($queue['description'] ?? ''); ?></p>
-            </div>
-
-            <div class="stats-grid">
-                <!-- Status Distribution -->
-                <div class="stats-card">
-                    <h3>Status Distribution</h3>
-                    <div class="stats-table">
-                        <div class="stats-row status-waiting">
-                            <span>Waiting:</span>
-                            <span><?php echo $stats['status_counts']['waiting']; ?></span>
-                        </div>
-                        <div class="stats-row status-in-meeting">
-                            <span>In Meeting:</span>
-                            <span><?php echo $stats['status_counts']['in_meeting']; ?></span>
-                        </div>
-                        <div class="stats-row status-done">
-                            <span>Completed:</span>
-                            <span><?php echo $stats['status_counts']['done']; ?></span>
-                        </div>
-                        <div class="stats-row status-skipped">
-                            <span>Skipped:</span>
-                            <span><?php echo $stats['status_counts']['skipped']; ?></span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Time Information -->
-                <div class="stats-card">
-                    <h3>Time Information</h3>
-                    <div class="stats-table">
-                        <div class="stats-row">
-                            <span>Queue Start:</span>
-                            <span><?php echo formatExactTime($stats['time_info']['queue_start']); ?></span>
-                        </div>
-                        <div class="stats-row">
-                            <span>Queue End:</span>
-                            <span><?php echo formatExactTime($stats['time_info']['queue_end']); ?></span>
-                </div>
-                        <div class="stats-row">
-                            <span>First Entry:</span>
-                            <span><?php echo formatExactTime($stats['time_info']['first_entry']); ?></span>
-                                </div>
-                        <div class="stats-row">
-                            <span>Last Entry:</span>
-                            <span><?php echo formatExactTime($stats['time_info']['last_entry']); ?></span>
-                            </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Charts -->
-            <div class="charts-container">
-                <div class="chart-card">
-                    <h3>Status Distribution</h3>
-                    <canvas id="statusChart"></canvas>
-                </div>
-                <div class="chart-card">
-                    <h3>Hourly Entries</h3>
-                    <canvas id="hourlyChart"></canvas>
-                </div>
+<h2>Queue Statistics: <?php echo htmlspecialchars($queue['purpose']); ?></h2>
+<div class="row mt-4">
+    <div class="col-md-6">
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <h5 class="card-title">Status Distribution</h5>
+                <ul class="list-group mb-3">
+                    <li class="list-group-item d-flex justify-content-between align-items-center">Waiting <span class="badge bg-warning text-dark"><?php echo $stats['status_counts']['waiting']; ?></span></li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">In Meeting <span class="badge bg-info text-dark"><?php echo $stats['status_counts']['in_meeting']; ?></span></li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">Completed <span class="badge bg-success"><?php echo $stats['status_counts']['done']; ?></span></li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">Skipped <span class="badge bg-danger"><?php echo $stats['status_counts']['skipped']; ?></span></li>
+                </ul>
+                <h5 class="card-title mt-4">Time Information</h5>
+                <ul class="list-group">
+                    <li class="list-group-item">Queue Start: <?php echo formatExactTime($stats['time_info']['queue_start']); ?></li>
+                    <li class="list-group-item">Queue End: <?php echo formatExactTime($stats['time_info']['queue_end']); ?></li>
+                    <li class="list-group-item">First Entry: <?php echo formatExactTime($stats['time_info']['first_entry']); ?></li>
+                    <li class="list-group-item">Last Entry: <?php echo formatExactTime($stats['time_info']['last_entry']); ?></li>
+                </ul>
             </div>
         </div>
     </div>
-
-    <script>
-    // Status Distribution Chart
-    const statusCtx = document.getElementById('statusChart').getContext('2d');
-    new Chart(statusCtx, {
-        type: 'pie',
-        data: {
-            labels: ['Waiting', 'In Meeting', 'Completed', 'Skipped'],
-            datasets: [{
-                data: [
-                    <?php echo $stats['status_counts']['waiting']; ?>,
-                    <?php echo $stats['status_counts']['in_meeting']; ?>,
-                    <?php echo $stats['status_counts']['done']; ?>,
-                    <?php echo $stats['status_counts']['skipped']; ?>
-                ],
-                backgroundColor: [
-                    '#ffc107', // waiting
-                    '#17a2b8', // in meeting
-                    '#28a745', // done
-                    '#dc3545'  // skipped
-                ]
-            }]
-        },
-        options: {
-            responsive: true,
-            plugins: {
-                legend: {
-                    position: 'bottom'
+    <div class="col-md-6">
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <h5 class="card-title">Averages</h5>
+                <ul class="list-group mb-3">
+                    <li class="list-group-item">Average Wait Time: <?php echo formatDuration($stats['average_wait_time']); ?></li>
+                    <li class="list-group-item">Average Meeting Duration: <?php echo formatDuration($stats['average_meeting_duration']); ?></li>
+                    <li class="list-group-item">Max Wait Time: <?php echo formatDuration($stats['max_wait_time']); ?></li>
+                </ul>
+                <h5 class="card-title mt-4">Total Entries</h5>
+                <span class="badge bg-primary" style="font-size:1.2em;"><?php echo $stats['total_entries']; ?></span>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title">Hourly Entries</h5>
+                <canvas id="hourlyChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+const hourlyCtx = document.getElementById('hourlyChart').getContext('2d');
+new Chart(hourlyCtx, {
+    type: 'bar',
+    data: {
+        labels: <?php echo json_encode(array_column($hourly_data, 'hour')); ?>,
+        datasets: [{
+            label: 'Entries per Hour',
+            data: <?php echo json_encode(array_column($hourly_data, 'count')); ?>,
+            backgroundColor: '#007bff'
+        }]
+    },
+    options: {
+        responsive: true,
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: {
+                    stepSize: 1
                 }
+            }
+        },
+        plugins: {
+            legend: {
+                display: false
             }
         }
-    });
-
-    // Hourly Entries Chart
-    const hourlyCtx = document.getElementById('hourlyChart').getContext('2d');
-    new Chart(hourlyCtx, {
-        type: 'bar',
-            data: {
-            labels: <?php echo json_encode(array_column($hourly_data, 'hour')); ?>,
-                datasets: [{
-                label: 'Entries per Hour',
-                data: <?php echo json_encode(array_column($hourly_data, 'count')); ?>,
-                backgroundColor: '#007bff'
-                }]
-            },
-            options: {
-                responsive: true,
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                    ticks: {
-                        stepSize: 1
-                    }
-                }
-            },
-            plugins: {
-                legend: {
-                    display: false
-                    }
-                }
-            }
-        });
-
-    // Auto-refresh every 30 seconds
-    setInterval(() => {
-        location.reload();
-    }, 30000);
-    </script>
-</body>
-</html> 
+    }
+});
+</script>
+<?php
+$content = ob_get_clean();
+require 'layout.php';
+?> 

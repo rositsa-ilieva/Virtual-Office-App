@@ -1,23 +1,72 @@
 <?php
 session_start();
-require_once 'db.php';
-
-// Check if user is logged in
 if (!isset($_SESSION['user_id'])) {
     header('Location: login.php');
     exit();
 }
 
-// Get user information
+require_once 'db.php';
+$user_id = $_SESSION['user_id'];
+$user_role = $_SESSION['user_role'] ?? 'student';
+
+// Fetch user info if needed
 $stmt = $pdo->prepare('SELECT * FROM users WHERE id = ?');
-$stmt->execute([$_SESSION['user_id']]);
+$stmt->execute([$user_id]);
 $user = $stmt->fetch();
 
-// If user not found, log them out and redirect to login
-if (!$user) {
-    session_destroy();
-    header('Location: login.php?error=user_not_found');
-    exit();
+// Set active page for sidebar
+$activePage = 'dashboard';
+
+// Sidebar include logic
+function renderSidebar($role, $activePage) {
+    ?>
+    <nav id="sidebar" class="sidebar bg-white shadow-sm">
+        <div class="sidebar-header p-3 border-bottom">
+            <div class="fw-bold mb-1"><i class="fa fa-user-circle me-2"></i><?php echo htmlspecialchars($_SESSION['user_role']); ?></div>
+            <div class="small text-muted"><?php echo htmlspecialchars($GLOBALS['user']['email']); ?></div>
+        </div>
+        <ul class="nav flex-column mt-3">
+            <li class="nav-item">
+                <a class="nav-link <?php if($activePage=='dashboard') echo 'active'; ?>" href="index.php"><i class="fa fa-home me-2"></i>Dashboard</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link <?php if($activePage=='profile') echo 'active'; ?>" href="profile.php"><i class="fa fa-user me-2"></i>Profile/Settings</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link <?php if($activePage=='queue-schedule') echo 'active'; ?>" href="queue-schedule.php"><i class="fa fa-calendar-alt me-2"></i>Upcoming Events</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link <?php if($activePage=='notifications') echo 'active'; ?>" href="notifications.php"><i class="fa fa-bell me-2"></i>Notifications</a>
+            </li>
+            <?php if ($role === 'student'): ?>
+                <li class="nav-item">
+                    <a class="nav-link <?php if($activePage=='my-queues') echo 'active'; ?>" href="my-queues.php"><i class="fa fa-list me-2"></i>My Queues</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link <?php if($activePage=='history') echo 'active'; ?>" href="history.php"><i class="fa fa-history me-2"></i>History</a>
+                </li>
+            <?php elseif ($role === 'teacher'): ?>
+                <li class="nav-item">
+                    <a class="nav-link <?php if($activePage=='create-room') echo 'active'; ?>" href="create-room.php"><i class="fa fa-plus me-2"></i>Create Room</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link <?php if($activePage=='manage-queues') echo 'active'; ?>" href="manage-queues.php"><i class="fa fa-tasks me-2"></i>Manage Queues</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link <?php if($activePage=='stats') echo 'active'; ?>" href="stats.php"><i class="fa fa-chart-bar me-2"></i>Stats</a>
+                </li>
+            <?php endif; ?>
+            <?php if ($role === 'admin'): ?>
+                <li class="nav-item">
+                    <a class="nav-link <?php if($activePage=='admin') echo 'active'; ?>" href="admin.php"><i class="fa fa-cog me-2"></i>Admin Panel</a>
+                </li>
+            <?php endif; ?>
+            <li class="nav-item mt-3">
+                <a class="nav-link text-danger" href="logout.php"><i class="fa fa-sign-out-alt me-2"></i>Logout</a>
+            </li>
+        </ul>
+    </nav>
+    <?php
 }
 
 // Get the selected filter from URL parameter, default to 'upcoming'
@@ -91,9 +140,40 @@ foreach ($queues as &$queue) {
 }
 unset($queue);
 
+// Fetch notifications for the logged-in user
+$notifications = [];
+try {
+    $stmt = $pdo->prepare('
+        SELECT n.*, u.name as from_user_name, q.purpose as queue_purpose, qe1.position as from_position, qe2.position as to_position
+        FROM notifications n
+        JOIN users u ON n.related_user_id = u.id
+        JOIN queues q ON n.related_queue_id = q.id
+        LEFT JOIN queue_entries qe1 ON qe1.queue_id = n.related_queue_id AND qe1.student_id = n.related_user_id
+        LEFT JOIN queue_entries qe2 ON qe2.queue_id = n.related_queue_id AND qe2.student_id = n.user_id
+        WHERE n.user_id = ? AND n.is_read = FALSE
+        ORDER BY n.created_at DESC
+    ');
+    $stmt->execute([$_SESSION['user_id']]);
+    $notifications = $stmt->fetchAll();
+} catch (PDOException $e) {
+    // If table doesn't exist, notifications will be empty
+    if ($e->getCode() != '42S02') {
+        throw $e;
+    }
+}
+$notif_count = count($notifications);
+
 $success = '';
 if (isset($_GET['message']) && $_GET['message'] === 'joined') {
     $success = "You've successfully joined the queue.";
+}
+
+// Add handler for 'Mark all as read'
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mark_all_read'])) {
+    $stmt = $pdo->prepare('UPDATE notifications SET is_read = TRUE WHERE user_id = ? AND is_read = FALSE');
+    $stmt->execute([$_SESSION['user_id']]);
+    header('Location: index.php');
+    exit();
 }
 ?>
 <!DOCTYPE html>
@@ -102,340 +182,69 @@ if (isset($_GET['message']) && $_GET['message'] === 'joined') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - Virtual Office Queue</title>
-    <link rel="stylesheet" href="style.css?v=2024.1">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
+    <link href="style.css?v=2" rel="stylesheet">
+    <style>
+        body { background: #f7f9fb; }
+        .sidebar { width: 260px; min-height: 100vh; position: fixed; }
+        .main-content { margin-left: 260px; padding: 2rem; }
+        @media (max-width: 991px) {
+            .sidebar { position: static; width: 100%; min-height: auto; }
+            .main-content { margin-left: 0; }
+        }
+    </style>
 </head>
 <body>
-    <div class="container">
-        <nav class="navbar">
-            <h1>Welcome, <?php echo htmlspecialchars($user['name'] ?? 'User'); ?></h1>
-            <div class="nav-links">
-                <?php if ($user['role'] === 'teacher'): ?>
-                    <a href="create-room.php" class="btn btn-primary">Create New Queue</a>
-                <?php endif; ?>
-                <a href="logout.php" class="btn btn-danger">Logout</a>
-            </div>
-        </nav>
-
-        <div class="dashboard">
-            <div class="dashboard-header" style="display: flex; justify-content: space-between; align-items: center; gap: 24px; flex-wrap: wrap;">
-                <?php if ($filter !== 'past'): ?>
-                    <h2 style="margin: 0;"><?php echo $user['role'] === 'teacher' ? 'Your Queues' : 'Available Queues'; ?></h2>
-                <?php endif; ?>
-                <div class="queue-filters" style="margin-left: auto;">
-                    <a href="?filter=upcoming" class="filter-btn <?php echo $filter === 'upcoming' ? 'active' : ''; ?>">
-                        <i class="fas fa-calendar-alt"></i>
-                        Upcoming Meetings
-                    </a>
-                    <a href="?filter=past" class="filter-btn <?php echo $filter === 'past' ? 'active' : ''; ?>">
-                        <i class="fas fa-history"></i>
-                        Past Meetings
-                    </a>
-                    <a href="?filter=group" class="filter-btn <?php echo $filter === 'group' ? 'active' : ''; ?>">
-                        <i class="fas fa-users"></i>
-                        Group Meetings
-                    </a>
+    <?php renderSidebar($user_role, $activePage); ?>
+    <div class="main-content">
+        <h1 class="mb-4">Welcome, <?php echo htmlspecialchars($user['name'] ?? $user['email']); ?>!</h1>
+        <?php if ($user_role === 'student'): ?>
+            <div class="row g-4">
+                <div class="col-md-6">
+                    <div class="card p-4 shadow-sm">
+                        <h5>My Queues</h5>
+                        <p>View and manage your current queues.</p>
+                        <a href="my-queues.php" class="btn btn-primary">Go to My Queues</a>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card p-4 shadow-sm">
+                        <h5>Upcoming Events</h5>
+                        <p>See your upcoming meetings and events.</p>
+                        <a href="queue-schedule.php" class="btn btn-primary">View Events</a>
+                    </div>
                 </div>
             </div>
-            
-            <?php if ($success): ?>
-                <div class="success" style="background:#d4edda;color:#155724;border:1.5px solid #c3e6cb;padding:12px 18px;border-radius:8px;margin-bottom:18px;font-weight:600;text-align:center;">
-                    <?php echo htmlspecialchars($success); ?>
-                </div>
-            <?php endif; ?>
-
-            <?php if ($filter === 'past'): ?>
-                <div class="queue-grid">
-                    <?php foreach ($queues as $queue): ?>
-                        <div class="queue-card">
-                            <div class="queue-info-group">
-                                <div class="queue-title"><?php echo htmlspecialchars($queue['purpose'] ?? 'Untitled Queue'); ?></div>
-                                <?php if (!empty($queue['description'])): ?>
-                                    <div class="queue-meta">Description: <?php echo htmlspecialchars($queue['description']); ?></div>
-                                <?php endif; ?>
-                                <?php if (!empty($queue['meeting_type'])): ?>
-                                    <div class="queue-meta">
-                                        <i class="fas fa-video"></i>
-                                        <?php echo htmlspecialchars($queue['meeting_type']); ?>
-                                    </div>
-                                <?php endif; ?>
-                                <?php if (!empty($queue['wait_time_method'])): ?>
-                                    <div class="queue-meta">
-                                        <i class="fas fa-clock"></i>
-                                        <?php echo htmlspecialchars(ucfirst($queue['wait_time_method'])); ?>
-                                    </div>
-                                <?php endif; ?>
-                                <div class="queue-meta">Teacher: <?php echo htmlspecialchars($queue['teacher_name'] ?? ''); ?></div>
-                                <div class="queue-meta">Status: <span class="status-badge status-<?php echo $queue['user_status']; ?>"><?php echo ucfirst($queue['user_status']); ?></span></div>
-                                <div class="queue-meta">Date: <?php echo $queue['ended_at'] ? date('M j, Y', strtotime($queue['ended_at'])) : '-'; ?></div>
-                                <div class="queue-meta">Time: <?php echo $queue['ended_at'] ? date('g:i A', strtotime($queue['ended_at'])) : '-'; ?></div>
-                                <?php if ($queue['started_at'] && $queue['ended_at']): ?>
-                                    <div class="queue-meta"><i class="fas fa-hourglass-end"></i> Duration: <?php echo round((strtotime($queue['ended_at']) - strtotime($queue['started_at'])) / 60, 1); ?> min</div>
-                                <?php endif; ?>
-                                <?php if (!empty($queue['comment']) && $queue['is_comment_public']): ?>
-                                    <div class="queue-meta"><i class="fas fa-sticky-note"></i> Note: <?php echo htmlspecialchars($queue['comment']); ?></div>
-                                <?php endif; ?>
-                            </div>
-                            <div class="queue-action-group">
-                                <span class="stat"><i class="fas fa-history"></i> Past Meeting</span>
-                            </div>
-                        </div>
-                    <?php endforeach; ?>
-                </div>
-            <?php else: ?>
-                <?php if (empty($queues)): ?>
-                    <div class="no-queues">
-                        <i class="fas fa-inbox"></i>
-                        <p>No <?php echo $filter; ?> queues available.</p>
+        <?php elseif ($user_role === 'teacher'): ?>
+            <div class="row g-4">
+                <div class="col-md-6">
+                    <div class="card p-4 shadow-sm">
+                        <h5>Create Room</h5>
+                        <p>Set up a new meeting room for your students.</p>
+                        <a href="create-room.php" class="btn btn-primary">Create Room</a>
                     </div>
-                <?php else: ?>
-                    <div class="queue-grid">
-                        <?php foreach ($queues as $queue): ?>
-                            <div class="queue-card">
-                                <?php if (isset($queue['position']) && $queue['position']): ?>
-                                    <div class="queue-position-badge"><?php echo htmlspecialchars($queue['position']); ?></div>
-                                <?php endif; ?>
-                                <div class="queue-info-group">
-                                    <div class="queue-title"><?php echo htmlspecialchars($queue['purpose'] ?? 'Untitled Queue'); ?></div>
-                                    <?php if (!empty($queue['description'])): ?>
-                                        <div class="queue-meta">Description: <?php echo htmlspecialchars($queue['description']); ?></div>
-                                    <?php endif; ?>
-                                    <?php if (!empty($queue['meeting_type'])): ?>
-                                        <div class="queue-meta">
-                                            <i class="fas fa-video"></i>
-                                            <?php echo htmlspecialchars($queue['meeting_type']); ?>
-                                        </div>
-                                    <?php endif; ?>
-                                    <?php if (!empty($queue['wait_time_method'])): ?>
-                                        <div class="queue-meta">
-                                            <i class="fas fa-clock"></i>
-                                            <?php echo htmlspecialchars(ucfirst($queue['wait_time_method'])); ?>
-                                        </div>
-                                    <?php endif; ?>
-                                    <?php if (isset($queue['user_status']) && $queue['user_status']): ?>
-                                        <div class="status-badge status-<?php echo $queue['user_status']; ?>">
-                                            <?php echo ucfirst($queue['user_status']); ?>
-                                        </div>
-                                    <?php endif; ?>
-                                    <?php if (isset($queue['estimated_start_time']) && $queue['estimated_start_time']): ?>
-                                        <div class="queue-estimated-pill">Est. <?php echo date('g:i A', strtotime($queue['estimated_start_time'])); ?></div>
-                                    <?php endif; ?>
-                                    <?php if ($queue['user_status'] === 'waiting'): ?>
-                                        <div class="swap-requests" data-queue-id="<?php echo $queue['id']; ?>">
-                                            <div class="swap-status"></div>
-                                            <div class="swap-actions">
-                                                <button class="btn btn-secondary swap-btn" onclick="showSwapModal(<?php echo $queue['id']; ?>)">
-                                                    Request Swap
-                                                </button>
-                                            </div>
-                                        </div>
-                                    <?php endif; ?>
-                                    <?php if (!empty($queue['meeting_link'])): ?>
-                                        <div class="queue-link">
-                                            <i class="fas fa-link"></i>
-                                            <a href="<?php echo htmlspecialchars($queue['meeting_link']); ?>" target="_blank">
-                                                <?php echo htmlspecialchars($queue['meeting_link']); ?>
-                                            </a>
-                                        </div>
-                                    <?php endif; ?>
-                                    <?php if (!empty($queue['access_code'])): ?>
-                                        <div class="queue-access">
-                                            <i class="fas fa-key"></i>
-                                            Access Code: <span class="queue-access-copy" data-code="<?php echo htmlspecialchars($queue['access_code']); ?>"><?php echo htmlspecialchars($queue['access_code']); ?></span>
-                                            <button type="button" class="copy-btn" onclick="copyAccessCode(this)">Copy</button>
-                                        </div>
-                                    <?php endif; ?>
-                                    <?php if ($user['role'] === 'teacher'): ?>
-                                        <div class="queue-stats">
-                                            <span class="stat">
-                                                <i class="fas fa-users"></i>
-                                                <?php echo htmlspecialchars($queue['waiting_count'] ?? 0); ?> waiting
-                                            </span>
-                                            <span class="stat">
-                                                <i class="fas fa-video"></i>
-                                                <?php echo htmlspecialchars($queue['in_meeting_count'] ?? 0); ?> in meeting
-                                            </span>
-                                        </div>
-                                    <?php endif; ?>
-                                </div>
-                                <div class="queue-action-group">
-                                    <?php if ($user['role'] === 'teacher'): ?>
-                                        <a href="room.php?id=<?php echo htmlspecialchars($queue['id']); ?>" class="btn btn-primary">Manage Queue</a>
-                                        <a href="statistics.php?id=<?php echo htmlspecialchars($queue['id']); ?>" class="btn btn-secondary">View Statistics</a>
-                                        <form method="POST" action="delete-queue.php" style="display:inline;" onsubmit="return confirm('Are you sure you want to delete this queue? This cannot be undone.');">
-                                            <input type="hidden" name="queue_id" value="<?php echo htmlspecialchars($queue['id']); ?>">
-                                            <button type="submit" class="btn btn-danger">Delete Queue</button>
-                                        </form>
-                                    <?php else: ?>
-                                        <?php if ($queue['user_status']): ?>
-                                            <?php if (in_array($queue['user_status'], ['waiting', 'in_meeting'])): ?>
-                                                <a href="queue-members.php?id=<?php echo htmlspecialchars($queue['id']); ?>" class="btn btn-secondary">View Queue Members</a>
-                                            <?php endif; ?>
-                                            <?php if ($queue['user_status'] === 'waiting'): ?>
-                                                <a href="leave.php?id=<?php echo htmlspecialchars($queue['id']); ?>" class="btn btn-danger">Leave Queue</a>
-                                            <?php endif; ?>
-                                        <?php else: ?>
-                                            <a href="join.php?id=<?php echo htmlspecialchars($queue['id']); ?>" class="btn btn-primary">Join Queue</a>
-                                        <?php endif; ?>
-                                    <?php endif; ?>
-                                </div>
-                            </div>
-                        <?php endforeach; ?>
+                </div>
+                <div class="col-md-6">
+                    <div class="card p-4 shadow-sm">
+                        <h5>Manage Queues</h5>
+                        <p>View and manage all queues you oversee.</p>
+                        <a href="manage-queues.php" class="btn btn-primary">Manage Queues</a>
                     </div>
-                <?php endif; ?>
-            <?php endif; ?>
-        </div>
+                </div>
+            </div>
+        <?php elseif ($user_role === 'admin'): ?>
+            <div class="row g-4">
+                <div class="col-md-6">
+                    <div class="card p-4 shadow-sm">
+                        <h5>Admin Panel</h5>
+                        <p>Manage users, queues, and system settings.</p>
+                        <a href="admin.php" class="btn btn-primary">Go to Admin Panel</a>
+                    </div>
+                </div>
+            </div>
+        <?php endif; ?>
     </div>
-    <script>
-    function copyAccessCode(btn) {
-        var codeSpan = btn.parentElement.querySelector('.queue-access-copy');
-        var code = codeSpan.getAttribute('data-code');
-        navigator.clipboard.writeText(code).then(function() {
-            btn.textContent = 'Copied!';
-            setTimeout(function() { btn.textContent = 'Copy'; }, 1200);
-        });
-    }
-
-    // Swap request functions
-    function showSwapModal(queueId) {
-        // Get list of students in queue
-        fetch('queue-members.php?id=' + queueId)
-            .then(response => response.json())
-            .then(data => {
-                if (data.error) {
-                    alert(data.error);
-                    return;
-                }
-                
-                // Create modal with list of students
-                const modal = document.createElement('div');
-                modal.className = 'modal';
-                modal.innerHTML = `
-                    <div class="modal-content">
-                        <h3>Request Swap With</h3>
-                        <div class="student-list">
-                            ${data.members.map(member => `
-                                <div class="student-item">
-                                    <span>${member.name}</span>
-                                    <button onclick="sendSwapRequest(${queueId}, ${member.id})">
-                                        Request Swap
-                                    </button>
-                                </div>
-                            `).join('')}
-                        </div>
-                        <button onclick="this.parentElement.parentElement.remove()">Close</button>
-                    </div>
-                `;
-                document.body.appendChild(modal);
-            });
-    }
-
-    function sendSwapRequest(queueId, receiverId) {
-        const formData = new FormData();
-        formData.append('action', 'send');
-        formData.append('queue_id', queueId);
-        formData.append('receiver_id', receiverId);
-
-        fetch('swap-request.php', {
-            method: 'POST',
-            body: formData
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.error) {
-                alert(data.error);
-            } else {
-                alert('Swap request sent successfully');
-                updateSwapStatus(queueId);
-            }
-        });
-    }
-
-    function updateSwapStatus(queueId) {
-        const formData = new FormData();
-        formData.append('action', 'get_status');
-        formData.append('queue_id', queueId);
-
-        fetch('swap-request.php', {
-            method: 'POST',
-            body: formData
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.error) {
-                console.error(data.error);
-                return;
-            }
-
-            const swapStatus = document.querySelector(`.swap-requests[data-queue-id="${queueId}"] .swap-status`);
-            if (!swapStatus) return;
-
-            let statusHtml = '';
-            
-            // Show received requests
-            if (data.received_requests.length > 0) {
-                statusHtml += '<div class="received-requests">';
-                data.received_requests.forEach(request => {
-                    statusHtml += `
-                        <div class="swap-request">
-                            <span>${request.sender_name} wants to swap positions</span>
-                            <button onclick="handleSwapRequest(${request.id}, 'accept')">Accept</button>
-                            <button onclick="handleSwapRequest(${request.id}, 'decline')">Decline</button>
-                        </div>
-                    `;
-                });
-                statusHtml += '</div>';
-            }
-
-            // Show sent requests
-            if (data.sent_requests.length > 0) {
-                statusHtml += '<div class="sent-requests">';
-                data.sent_requests.forEach(request => {
-                    statusHtml += `
-                        <div class="swap-request">
-                            <span>Swap request sent to ${request.receiver_name}</span>
-                            <span class="status-badge">Pending</span>
-                        </div>
-                    `;
-                });
-                statusHtml += '</div>';
-            }
-
-            swapStatus.innerHTML = statusHtml;
-        });
-    }
-
-    function handleSwapRequest(requestId, action) {
-        const formData = new FormData();
-        formData.append('action', action);
-        formData.append('request_id', requestId);
-
-        fetch('swap-request.php', {
-            method: 'POST',
-            body: formData
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.error) {
-                alert(data.error);
-            } else {
-                alert(action === 'accept' ? 'Swap request accepted' : 'Swap request declined');
-                // Refresh the page to show updated queue positions
-                location.reload();
-            }
-        });
-    }
-
-    // Update swap status every 30 seconds
-    setInterval(() => {
-        document.querySelectorAll('.swap-requests').forEach(el => {
-            updateSwapStatus(el.dataset.queueId);
-        });
-    }, 30000);
-
-    // Initial update of swap status
-    document.querySelectorAll('.swap-requests').forEach(el => {
-        updateSwapStatus(el.dataset.queueId);
-    });
-    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
