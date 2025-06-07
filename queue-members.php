@@ -36,11 +36,54 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit();
     }
     if (isset($_POST['request_swap']) && isset($_POST['swap_with'])) {
-        $_SESSION['swap_request'] = [
-            'from' => $user_id,
-            'to' => (int)$_POST['swap_with'],
-            'queue_id' => $queue_id
-        ];
+        $swap_with_id = (int)$_POST['swap_with'];
+        
+        try {
+            // Create notification for the swap request
+            $stmt = $pdo->prepare('INSERT INTO notifications (user_id, type, message, related_queue_id, related_user_id) VALUES (?, "swap_request", ?, ?, ?)');
+            $stmt->execute([
+                $swap_with_id,
+                "wants to swap positions with you in the queue",
+                $queue_id,
+                $user_id
+            ]);
+            
+            // Redirect to refresh the page
+            header('Location: queue-members.php?id=' . $queue_id);
+            exit();
+        } catch (PDOException $e) {
+            // If table doesn't exist, create it
+            if ($e->getCode() == '42S02') {
+                $pdo->exec("CREATE TABLE IF NOT EXISTS notifications (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    user_id INT NOT NULL,
+                    type ENUM('swap_request', 'swap_approved', 'swap_declined') NOT NULL,
+                    message TEXT NOT NULL,
+                    related_queue_id INT NOT NULL,
+                    related_user_id INT NOT NULL,
+                    is_read BOOLEAN DEFAULT FALSE,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (user_id) REFERENCES users(id),
+                    FOREIGN KEY (related_queue_id) REFERENCES queues(id),
+                    FOREIGN KEY (related_user_id) REFERENCES users(id)
+                )");
+                
+                // Try the insert again
+                $stmt = $pdo->prepare('INSERT INTO notifications (user_id, type, message, related_queue_id, related_user_id) VALUES (?, "swap_request", ?, ?, ?)');
+                $stmt->execute([
+                    $swap_with_id,
+                    "wants to swap positions with you in the queue",
+                    $queue_id,
+                    $user_id
+                ]);
+                
+                // Redirect to refresh the page
+                header('Location: queue-members.php?id=' . $queue_id);
+                exit();
+            } else {
+                throw $e;
+            }
+        }
     }
     if (isset($_POST['approve_swap'])) {
         if (isset($_SESSION['swap_request']) && $_SESSION['swap_request']['to'] == $user_id && $_SESSION['swap_request']['queue_id'] == $queue_id) {
@@ -64,6 +107,59 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit();
         }
     }
+}
+
+// Handle swap approval/decline
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && isset($_POST['notification_id'])) {
+    $action = $_POST['action'];
+    $notification_id = $_POST['notification_id'];
+    $from_user_id = $_POST['from_user_id'];
+    
+    if ($action === 'approve_swap') {
+        // Get both entries
+        $stmt = $pdo->prepare('SELECT id, position FROM queue_entries WHERE queue_id = ? AND student_id IN (?, ?)');
+        $stmt->execute([$queue_id, $from_user_id, $user_id]);
+        $entries = $stmt->fetchAll();
+        
+        if (count($entries) == 2) {
+            // Start transaction
+            $pdo->beginTransaction();
+            try {
+                // Get the positions
+                $pos1 = $entries[0]['position'];
+                $id1 = $entries[0]['id'];
+                $pos2 = $entries[1]['position'];
+                $id2 = $entries[1]['id'];
+                
+                // Swap positions
+                $stmt = $pdo->prepare('UPDATE queue_entries SET position = ? WHERE id = ?');
+                $stmt->execute([$pos2, $id1]);
+                $stmt->execute([$pos1, $id2]);
+                
+                // Create notification for the requester
+                $stmt = $pdo->prepare('INSERT INTO notifications (user_id, type, message, related_queue_id, related_user_id) VALUES (?, "swap_approved", ?, ?, ?)');
+                $stmt->execute([$from_user_id, "Your position swap request was approved", $queue_id, $user_id]);
+                
+                // Commit transaction
+                $pdo->commit();
+            } catch (Exception $e) {
+                // Rollback transaction on error
+                $pdo->rollBack();
+                throw $e;
+            }
+        }
+    } elseif ($action === 'decline_swap') {
+        // Create notification for the requester
+        $stmt = $pdo->prepare('INSERT INTO notifications (user_id, type, message, related_queue_id, related_user_id) VALUES (?, "swap_declined", ?, ?, ?)');
+        $stmt->execute([$from_user_id, "Your position swap request was declined", $queue_id, $user_id]);
+    }
+    
+    // Mark the notification as read
+    $stmt = $pdo->prepare('UPDATE notifications SET is_read = TRUE WHERE id = ?');
+    $stmt->execute([$notification_id]);
+    
+    header('Location: queue-members.php?id=' . $queue_id);
+    exit();
 }
 
 // Get queue info
@@ -114,6 +210,26 @@ foreach ($members as $i => &$entry) {
     }
 }
 unset($entry);
+
+// Get notifications
+$notifications = [];
+try {
+    $stmt = $pdo->prepare('
+        SELECT n.*, u.name as from_user_name, q.purpose as queue_purpose 
+        FROM notifications n
+        JOIN users u ON n.related_user_id = u.id
+        JOIN queues q ON n.related_queue_id = q.id
+        WHERE n.user_id = ? AND n.is_read = FALSE
+        ORDER BY n.created_at DESC
+    ');
+    $stmt->execute([$user_id]);
+    $notifications = $stmt->fetchAll();
+} catch (PDOException $e) {
+    // If table doesn't exist, notifications will be empty
+    if ($e->getCode() != '42S02') {
+        throw $e;
+    }
+}
 
 ?>
 <!DOCTYPE html>
@@ -178,6 +294,7 @@ unset($entry);
                                 <td>
                                     <?php if ($entry['student_id'] != $user_id && $entry['status'] === 'waiting'): ?>
                                         <form method="POST" style="display:inline;">
+                                            <input type="hidden" name="request_swap" value="1">
                                             <input type="hidden" name="swap_with" value="<?php echo $entry['student_id']; ?>">
                                             <button type="submit" name="request_swap" class="btn btn-secondary">Request Swap</button>
                                         </form>
@@ -206,6 +323,38 @@ unset($entry);
             }
             ?>
         </div>
+
+        <!-- Notifications Section -->
+        <?php if (!empty($notifications)): ?>
+            <div class="notifications-container">
+                <?php foreach ($notifications as $notification): ?>
+                    <div class="notification-card">
+                        <div class="notification-content">
+                            <p><strong><?php echo htmlspecialchars($notification['from_user_name']); ?></strong> 
+                               <?php echo htmlspecialchars($notification['message']); ?></p>
+                            <?php if ($notification['type'] === 'swap_request'): ?>
+                                <div class="notification-actions">
+                                    <form method="POST" style="display: inline;">
+                                        <input type="hidden" name="action" value="approve_swap">
+                                        <input type="hidden" name="notification_id" value="<?php echo $notification['id']; ?>">
+                                        <input type="hidden" name="queue_id" value="<?php echo $notification['related_queue_id']; ?>">
+                                        <input type="hidden" name="from_user_id" value="<?php echo $notification['related_user_id']; ?>">
+                                        <button type="submit" class="btn btn-success">Approve</button>
+                                    </form>
+                                    <form method="POST" style="display: inline;">
+                                        <input type="hidden" name="action" value="decline_swap">
+                                        <input type="hidden" name="notification_id" value="<?php echo $notification['id']; ?>">
+                                        <input type="hidden" name="queue_id" value="<?php echo $notification['related_queue_id']; ?>">
+                                        <input type="hidden" name="from_user_id" value="<?php echo $notification['related_user_id']; ?>">
+                                        <button type="submit" class="btn btn-danger">Decline</button>
+                                    </form>
+                                </div>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+        <?php endif; ?>
     </div>
 </body>
 </html> 
