@@ -27,9 +27,9 @@ $stats = [
     'average_meeting_duration' => 0,
     'max_wait_time' => 0,
     'status_counts' => [
-        'waiting' => 0,
-        'in_meeting' => 0,
-        'done' => 0,
+    'waiting' => 0,
+    'in_meeting' => 0,
+    'done' => 0,
         'skipped' => 0
     ],
     'time_info' => [
@@ -75,7 +75,7 @@ $stmt = $pdo->prepare('
             WHEN started_at IS NOT NULL 
             THEN 1 
         END) as meetings_with_wait_time
-    FROM queue_entries 
+        FROM queue_entries 
     WHERE queue_id = ?
 ');
 $stmt->execute([$queue_id]);
@@ -117,7 +117,7 @@ if ($counts) {
 // Get maximum wait time
 $stmt = $pdo->prepare('
     SELECT MAX(TIMESTAMPDIFF(SECOND, joined_at, started_at)) as max_wait_seconds
-    FROM queue_entries 
+        FROM queue_entries 
     WHERE queue_id = ? AND started_at IS NOT NULL
 ');
 $stmt->execute([$queue_id]);
@@ -166,8 +166,8 @@ $stmt = $pdo->prepare('
     SELECT 
         DATE_FORMAT(joined_at, "%Y-%m-%d %H:00") as hour,
         COUNT(*) as count
-    FROM queue_entries 
-    WHERE queue_id = ?
+        FROM queue_entries 
+        WHERE queue_id = ? 
     GROUP BY hour
     ORDER BY hour
 ');
@@ -257,15 +257,15 @@ function formatExactTime($timestamp) {
                         <div class="stats-row">
                             <span>Queue End:</span>
                             <span><?php echo formatExactTime($stats['time_info']['queue_end']); ?></span>
-                        </div>
+                </div>
                         <div class="stats-row">
                             <span>First Entry:</span>
                             <span><?php echo formatExactTime($stats['time_info']['first_entry']); ?></span>
-                        </div>
+                                </div>
                         <div class="stats-row">
                             <span>Last Entry:</span>
                             <span><?php echo formatExactTime($stats['time_info']['last_entry']); ?></span>
-                        </div>
+                            </div>
                     </div>
                 </div>
             </div>
@@ -320,19 +320,19 @@ function formatExactTime($timestamp) {
     const hourlyCtx = document.getElementById('hourlyChart').getContext('2d');
     new Chart(hourlyCtx, {
         type: 'bar',
-        data: {
+            data: {
             labels: <?php echo json_encode(array_column($hourly_data, 'hour')); ?>,
-            datasets: [{
+                datasets: [{
                 label: 'Entries per Hour',
                 data: <?php echo json_encode(array_column($hourly_data, 'count')); ?>,
                 backgroundColor: '#007bff'
-            }]
-        },
-        options: {
-            responsive: true,
-            scales: {
-                y: {
-                    beginAtZero: true,
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true,
                     ticks: {
                         stepSize: 1
                     }
@@ -341,10 +341,10 @@ function formatExactTime($timestamp) {
             plugins: {
                 legend: {
                     display: false
+                    }
                 }
             }
-        }
-    });
+        });
 
     // Auto-refresh every 30 seconds
     setInterval(() => {

@@ -44,7 +44,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
             $stmt = $pdo->prepare($sql);
             if ($stmt->execute([$_SESSION['user_id'], $purpose, $description, $meeting_link, $access_code, $meeting_type, $is_automatic, $default_duration, $wait_time_method, $start_time_db])) {
-                $success = 'Queue room created successfully!';
+                header('Location: index.php');
+                exit();
             } else {
                 $error = 'Failed to create queue room. Please try again.';
             }

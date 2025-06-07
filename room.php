@@ -67,7 +67,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     }
 }
 
-// Get queue entries with student names
+// Get queue entries with student names (active)
 $sql = "SELECT qe.*, u.name as student_name 
         FROM queue_entries qe 
         JOIN users u ON qe.student_id = u.id 
@@ -83,6 +83,17 @@ $sql = "SELECT qe.*, u.name as student_name
 $stmt = $pdo->prepare($sql);
 $stmt->execute([$queue_id]);
 $entries = $stmt->fetchAll();
+
+// Get past students (done/skipped)
+$sql_past = "SELECT qe.*, u.name as student_name 
+        FROM queue_entries qe 
+        JOIN users u ON qe.student_id = u.id 
+        WHERE qe.queue_id = ? 
+        AND qe.status IN ('done', 'skipped')
+        ORDER BY qe.ended_at DESC, qe.position ASC";
+$stmt = $pdo->prepare($sql_past);
+$stmt->execute([$queue_id]);
+$past_entries = $stmt->fetchAll();
 
 // Check if there is a student currently in a meeting
 $in_meeting_entry = null;
@@ -220,6 +231,49 @@ unset($entry);
                             </div>
                         </div>
                     <?php endforeach; ?>
+                <?php endif; ?>
+            </div>
+            <!-- Past Students Section -->
+            <div class="queue-list" style="margin-top:32px;">
+                <h2>Past Students</h2>
+                <?php if (empty($past_entries)): ?>
+                    <p class="no-entries">No past students.</p>
+                <?php else: ?>
+                    <table class="schedule-table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Status</th>
+                                <th>Started</th>
+                                <th>Ended</th>
+                                <th>Duration</th>
+                                <th>Comment</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($past_entries as $entry): ?>
+                                <tr>
+                                    <td><?php echo htmlspecialchars($entry['student_name']); ?></td>
+                                    <td><?php echo ucfirst($entry['status']); ?></td>
+                                    <td><?php echo $entry['started_at'] ? date('M j, Y g:i A', strtotime($entry['started_at'])) : '-'; ?></td>
+                                    <td><?php echo $entry['ended_at'] ? date('M j, Y g:i A', strtotime($entry['ended_at'])) : '-'; ?></td>
+                                    <td>
+                                        <?php
+                                        if ($entry['started_at'] && $entry['ended_at']) {
+                                            $start = strtotime($entry['started_at']);
+                                            $end = strtotime($entry['ended_at']);
+                                            $duration = round(($end - $start) / 60, 1);
+                                            echo $duration . ' min';
+                                        } else {
+                                            echo '-';
+                                        }
+                                        ?>
+                                    </td>
+                                    <td><?php echo htmlspecialchars($entry['comment']); ?></td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
                 <?php endif; ?>
             </div>
         </div>

@@ -8,6 +8,10 @@ if (isset($_SESSION['user_id'])) {
 }
 
 $error = '';
+$success = '';
+if (isset($_GET['message']) && $_GET['message'] === 'registered') {
+    $success = 'Registration successful. You can now log in.';
+}
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $email = $_POST['email'] ?? '';
@@ -46,6 +50,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             <h1>Login</h1>
             <?php if ($error): ?>
                 <div class="error"><?php echo htmlspecialchars($error); ?></div>
+            <?php endif; ?>
+            <?php if ($success): ?>
+                <div class="success" style="background:#d4edda;color:#155724;border:1.5px solid #c3e6cb;padding:12px 18px;border-radius:8px;margin-bottom:18px;font-weight:600;text-align:center;">
+                    <?php echo htmlspecialchars($success); ?>
+                </div>
             <?php endif; ?>
             <form method="POST" action="">
                 <div class="form-group">

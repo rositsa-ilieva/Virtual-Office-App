@@ -62,7 +62,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 VALUES (?, ?, ?, ?, ?, ?)";
         $stmt = $pdo->prepare($sql);
         if ($stmt->execute([$queue_id, $user_id, $comment, $is_comment_public, $position, $estimated_start_time])) {
-            $success = 'Successfully joined the queue!';
+            header('Location: index.php?message=joined');
+            exit();
         } else {
             $error = 'Failed to join queue. Please try again.';
         }

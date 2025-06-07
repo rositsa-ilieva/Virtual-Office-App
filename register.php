@@ -35,7 +35,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $hashed_password = password_hash($password, PASSWORD_DEFAULT);
             $stmt = $pdo->prepare('INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)');
             if ($stmt->execute([$name, $email, $hashed_password, $role])) {
-                $success = 'Registration successful! You can now login.';
+                header('Location: login.php?message=registered');
+                exit();
             } else {
                 $error = 'Registration failed. Please try again.';
             }
@@ -68,7 +69,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 <div class="error"><?php echo htmlspecialchars($error); ?></div>
             <?php endif; ?>
             <?php if ($success): ?>
-                <div class="success"><?php echo htmlspecialchars($success); ?></div>
+                <!-- Removed success message display, as redirect will handle it -->
             <?php endif; ?>
             <form method="POST" action="">
                 <div class="form-group">

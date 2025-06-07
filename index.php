@@ -28,6 +28,13 @@ $base_sql = "SELECT q.*,
             qe.status as user_status,
             qe.position,
             qe.estimated_start_time,
+            qe.started_at,
+            qe.ended_at,
+            qe.comment,
+            qe.is_comment_public,
+            qe.student_id,
+            q.teacher_id,
+            (SELECT name FROM users WHERE id = q.teacher_id) as teacher_name,
             (SELECT COUNT(*) FROM queue_entries WHERE queue_id = q.id AND status = 'waiting') as waiting_count,
             (SELECT COUNT(*) FROM queue_entries WHERE queue_id = q.id AND status = 'in_meeting') as in_meeting_count
             FROM queues q 
@@ -36,14 +43,16 @@ $base_sql = "SELECT q.*,
 // Add filter conditions
 switch ($filter) {
     case 'past':
-        $sql = $base_sql . " WHERE q.is_active = 0 ORDER BY q.created_at DESC";
+        // Only show queues where the student's entry is 'done' or 'skipped'
+        $sql = $base_sql . " WHERE (qe.status IN ('done', 'skipped')) ORDER BY q.created_at DESC";
         break;
     case 'group':
-        $sql = $base_sql . " WHERE q.is_active = 1 AND q.meeting_type IN ('group', 'conference', 'workshop') ORDER BY q.created_at DESC";
+        $sql = $base_sql . " WHERE q.is_active = 1 AND q.meeting_type IN ('group', 'conference', 'workshop') AND (qe.status IS NULL OR qe.status IN ('waiting', 'in_meeting')) ORDER BY q.created_at DESC";
         break;
     case 'upcoming':
     default:
-        $sql = $base_sql . " WHERE q.is_active = 1 ORDER BY q.created_at DESC";
+        // Only show queues where the student has not joined or is still waiting/in_meeting
+        $sql = $base_sql . " WHERE q.is_active = 1 AND (qe.status IS NULL OR qe.status IN ('waiting', 'in_meeting')) ORDER BY q.created_at DESC";
         break;
 }
 
@@ -81,6 +90,11 @@ foreach ($queues as &$queue) {
     }
 }
 unset($queue);
+
+$success = '';
+if (isset($_GET['message']) && $_GET['message'] === 'joined') {
+    $success = "You've successfully joined the queue.";
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -104,7 +118,7 @@ unset($queue);
 
         <div class="dashboard">
             <div class="dashboard-header">
-                <h2><?php echo $user['role'] === 'teacher' ? 'Your Queues' : 'Available Queues'; ?></h2>
+            <h2><?php echo $user['role'] === 'teacher' ? 'Your Queues' : 'Available Queues'; ?></h2>
                 <div class="queue-filters">
                     <a href="?filter=upcoming" class="filter-btn <?php echo $filter === 'upcoming' ? 'active' : ''; ?>">
                         <i class="fas fa-calendar-alt"></i>
@@ -121,105 +135,130 @@ unset($queue);
                 </div>
             </div>
             
-            <?php if (empty($queues)): ?>
-                <div class="no-queues">
-                    <i class="fas fa-inbox"></i>
-                    <p>No <?php echo $filter; ?> queues available.</p>
+            <?php if ($success): ?>
+                <div class="success" style="background:#d4edda;color:#155724;border:1.5px solid #c3e6cb;padding:12px 18px;border-radius:8px;margin-bottom:18px;font-weight:600;text-align:center;">
+                    <?php echo htmlspecialchars($success); ?>
                 </div>
-            <?php else: ?>
+            <?php endif; ?>
+
+            <?php if ($filter === 'past'): ?>
                 <div class="queue-grid">
                     <?php foreach ($queues as $queue): ?>
                         <div class="queue-card">
-                            <?php if (isset($queue['position']) && $queue['position']): ?>
-                                <div class="queue-position-badge"><?php echo htmlspecialchars($queue['position']); ?></div>
-                            <?php endif; ?>
                             <div class="queue-info-group">
                                 <div class="queue-title"><?php echo htmlspecialchars($queue['purpose'] ?? 'Untitled Queue'); ?></div>
-                                <?php if (!empty($queue['description'])): ?>
-                                    <div class="queue-meta">Description: <?php echo htmlspecialchars($queue['description']); ?></div>
-                                <?php endif; ?>
-                                <?php if (!empty($queue['meeting_type'])): ?>
-                                    <div class="queue-meta">
-                                        <i class="fas fa-video"></i>
-                                        <?php echo htmlspecialchars($queue['meeting_type']); ?>
-                                    </div>
-                                <?php endif; ?>
-                                <?php if (!empty($queue['wait_time_method'])): ?>
-                                    <div class="queue-meta">
-                                        <i class="fas fa-clock"></i>
-                                        <?php echo htmlspecialchars(ucfirst($queue['wait_time_method'])); ?>
-                                    </div>
-                                <?php endif; ?>
-                                <?php if (isset($queue['user_status']) && $queue['user_status']): ?>
-                                    <div class="status-badge status-<?php echo $queue['user_status']; ?>">
-                                        <?php echo ucfirst($queue['user_status']); ?>
-                                    </div>
-                                <?php endif; ?>
-                                <?php if (isset($queue['estimated_start_time']) && $queue['estimated_start_time']): ?>
-                                    <div class="queue-estimated-pill">Est. <?php echo date('g:i A', strtotime($queue['estimated_start_time'])); ?></div>
-                                <?php endif; ?>
-                                <?php if ($queue['user_status'] === 'waiting'): ?>
-                                    <div class="swap-requests" data-queue-id="<?php echo $queue['id']; ?>">
-                                        <div class="swap-status"></div>
-                                        <div class="swap-actions">
-                                            <button class="btn btn-secondary swap-btn" onclick="showSwapModal(<?php echo $queue['id']; ?>)">
-                                                Request Swap
-                                            </button>
-                                        </div>
-                                    </div>
-                                <?php endif; ?>
-                                <?php if (!empty($queue['meeting_link'])): ?>
-                                    <div class="queue-link">
-                                        <i class="fas fa-link"></i>
-                                        <a href="<?php echo htmlspecialchars($queue['meeting_link']); ?>" target="_blank">
-                                            <?php echo htmlspecialchars($queue['meeting_link']); ?>
-                                        </a>
-                                    </div>
-                                <?php endif; ?>
-                                <?php if (!empty($queue['access_code'])): ?>
-                                    <div class="queue-access">
-                                        <i class="fas fa-key"></i>
-                                        Access Code: <span class="queue-access-copy" data-code="<?php echo htmlspecialchars($queue['access_code']); ?>"><?php echo htmlspecialchars($queue['access_code']); ?></span>
-                                        <button type="button" class="copy-btn" onclick="copyAccessCode(this)">Copy</button>
-                                    </div>
-                                <?php endif; ?>
-                                <?php if ($user['role'] === 'teacher'): ?>
-                                    <div class="queue-stats">
-                                        <span class="stat">
-                                            <i class="fas fa-users"></i>
-                                            <?php echo htmlspecialchars($queue['waiting_count'] ?? 0); ?> waiting
-                                        </span>
-                                        <span class="stat">
-                                            <i class="fas fa-video"></i>
-                                            <?php echo htmlspecialchars($queue['in_meeting_count'] ?? 0); ?> in meeting
-                                        </span>
-                                    </div>
-                                <?php endif; ?>
-                            </div>
-                            <div class="queue-action-group">
-                                <?php if ($user['role'] === 'teacher'): ?>
-                                    <a href="room.php?id=<?php echo htmlspecialchars($queue['id']); ?>" class="btn btn-primary">Manage Queue</a>
-                                    <a href="statistics.php?id=<?php echo htmlspecialchars($queue['id']); ?>" class="btn btn-secondary">View Statistics</a>
-                                    <form method="POST" action="delete-queue.php" style="display:inline;" onsubmit="return confirm('Are you sure you want to delete this queue? This cannot be undone.');">
-                                        <input type="hidden" name="queue_id" value="<?php echo htmlspecialchars($queue['id']); ?>">
-                                        <button type="submit" class="btn btn-danger">Delete Queue</button>
-                                    </form>
-                                <?php else: ?>
-                                    <?php if ($queue['user_status']): ?>
-                                        <?php if (in_array($queue['user_status'], ['waiting', 'in_meeting'])): ?>
-                                            <a href="queue-members.php?id=<?php echo htmlspecialchars($queue['id']); ?>" class="btn btn-secondary">View Queue Members</a>
-                                        <?php endif; ?>
-                                        <?php if ($queue['user_status'] === 'waiting'): ?>
-                                            <a href="leave.php?id=<?php echo htmlspecialchars($queue['id']); ?>" class="btn btn-danger">Leave Queue</a>
-                                        <?php endif; ?>
-                                    <?php else: ?>
-                                        <a href="join.php?id=<?php echo htmlspecialchars($queue['id']); ?>" class="btn btn-primary">Join Queue</a>
-                                    <?php endif; ?>
+                                <div class="queue-meta">Teacher: <?php echo htmlspecialchars($queue['teacher_name'] ?? ''); ?></div>
+                                <div class="queue-meta">Status: <span class="status-badge status-<?php echo $queue['user_status']; ?>"><?php echo ucfirst($queue['user_status']); ?></span></div>
+                                <div class="queue-meta">Date: <?php echo $queue['ended_at'] ? date('M j, Y', strtotime($queue['ended_at'])) : '-'; ?></div>
+                                <div class="queue-meta">Time: <?php echo $queue['ended_at'] ? date('g:i A', strtotime($queue['ended_at'])) : '-'; ?></div>
+                                <?php if (!empty($queue['comment']) && $queue['is_comment_public']): ?>
+                                    <div class="queue-meta">Note: <?php echo htmlspecialchars($queue['comment']); ?></div>
                                 <?php endif; ?>
                             </div>
                         </div>
                     <?php endforeach; ?>
                 </div>
+            <?php else: ?>
+                <?php if (empty($queues)): ?>
+                    <div class="no-queues">
+                        <i class="fas fa-inbox"></i>
+                        <p>No <?php echo $filter; ?> queues available.</p>
+                    </div>
+                <?php else: ?>
+                    <div class="queue-grid">
+                        <?php foreach ($queues as $queue): ?>
+                            <div class="queue-card">
+                                <?php if (isset($queue['position']) && $queue['position']): ?>
+                                    <div class="queue-position-badge"><?php echo htmlspecialchars($queue['position']); ?></div>
+                                <?php endif; ?>
+                                <div class="queue-info-group">
+                                    <div class="queue-title"><?php echo htmlspecialchars($queue['purpose'] ?? 'Untitled Queue'); ?></div>
+                                    <?php if (!empty($queue['description'])): ?>
+                                        <div class="queue-meta">Description: <?php echo htmlspecialchars($queue['description']); ?></div>
+                                    <?php endif; ?>
+                                    <?php if (!empty($queue['meeting_type'])): ?>
+                                        <div class="queue-meta">
+                                            <i class="fas fa-video"></i>
+                                            <?php echo htmlspecialchars($queue['meeting_type']); ?>
+                                        </div>
+                                    <?php endif; ?>
+                                    <?php if (!empty($queue['wait_time_method'])): ?>
+                                        <div class="queue-meta">
+                                            <i class="fas fa-clock"></i>
+                                            <?php echo htmlspecialchars(ucfirst($queue['wait_time_method'])); ?>
+                                        </div>
+                                    <?php endif; ?>
+                                    <?php if (isset($queue['user_status']) && $queue['user_status']): ?>
+                                        <div class="status-badge status-<?php echo $queue['user_status']; ?>">
+                                            <?php echo ucfirst($queue['user_status']); ?>
+                                        </div>
+                                    <?php endif; ?>
+                                    <?php if (isset($queue['estimated_start_time']) && $queue['estimated_start_time']): ?>
+                                        <div class="queue-estimated-pill">Est. <?php echo date('g:i A', strtotime($queue['estimated_start_time'])); ?></div>
+                                    <?php endif; ?>
+                                    <?php if ($queue['user_status'] === 'waiting'): ?>
+                                        <div class="swap-requests" data-queue-id="<?php echo $queue['id']; ?>">
+                                            <div class="swap-status"></div>
+                                            <div class="swap-actions">
+                                                <button class="btn btn-secondary swap-btn" onclick="showSwapModal(<?php echo $queue['id']; ?>)">
+                                                    Request Swap
+                                                </button>
+                                            </div>
+                                        </div>
+                                    <?php endif; ?>
+                                    <?php if (!empty($queue['meeting_link'])): ?>
+                                        <div class="queue-link">
+                                            <i class="fas fa-link"></i>
+                                            <a href="<?php echo htmlspecialchars($queue['meeting_link']); ?>" target="_blank">
+                                                <?php echo htmlspecialchars($queue['meeting_link']); ?>
+                                            </a>
+                                        </div>
+                                    <?php endif; ?>
+                                    <?php if (!empty($queue['access_code'])): ?>
+                                        <div class="queue-access">
+                                            <i class="fas fa-key"></i>
+                                            Access Code: <span class="queue-access-copy" data-code="<?php echo htmlspecialchars($queue['access_code']); ?>"><?php echo htmlspecialchars($queue['access_code']); ?></span>
+                                            <button type="button" class="copy-btn" onclick="copyAccessCode(this)">Copy</button>
+                                        </div>
+                                    <?php endif; ?>
+                                    <?php if ($user['role'] === 'teacher'): ?>
+                                        <div class="queue-stats">
+                                            <span class="stat">
+                                                <i class="fas fa-users"></i>
+                                                <?php echo htmlspecialchars($queue['waiting_count'] ?? 0); ?> waiting
+                                            </span>
+                                            <span class="stat">
+                                                <i class="fas fa-video"></i>
+                                                <?php echo htmlspecialchars($queue['in_meeting_count'] ?? 0); ?> in meeting
+                                            </span>
+                                        </div>
+                                    <?php endif; ?>
+                                </div>
+                                <div class="queue-action-group">
+                                    <?php if ($user['role'] === 'teacher'): ?>
+                                        <a href="room.php?id=<?php echo htmlspecialchars($queue['id']); ?>" class="btn btn-primary">Manage Queue</a>
+                                        <a href="statistics.php?id=<?php echo htmlspecialchars($queue['id']); ?>" class="btn btn-secondary">View Statistics</a>
+                                        <form method="POST" action="delete-queue.php" style="display:inline;" onsubmit="return confirm('Are you sure you want to delete this queue? This cannot be undone.');">
+                                            <input type="hidden" name="queue_id" value="<?php echo htmlspecialchars($queue['id']); ?>">
+                                            <button type="submit" class="btn btn-danger">Delete Queue</button>
+                                        </form>
+                                    <?php else: ?>
+                                        <?php if ($queue['user_status']): ?>
+                                            <?php if (in_array($queue['user_status'], ['waiting', 'in_meeting'])): ?>
+                                                <a href="queue-members.php?id=<?php echo htmlspecialchars($queue['id']); ?>" class="btn btn-secondary">View Queue Members</a>
+                                            <?php endif; ?>
+                                            <?php if ($queue['user_status'] === 'waiting'): ?>
+                                                <a href="leave.php?id=<?php echo htmlspecialchars($queue['id']); ?>" class="btn btn-danger">Leave Queue</a>
+                                            <?php endif; ?>
+                                        <?php else: ?>
+                                            <a href="join.php?id=<?php echo htmlspecialchars($queue['id']); ?>" class="btn btn-primary">Join Queue</a>
+                                        <?php endif; ?>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                <?php endif; ?>
             <?php endif; ?>
         </div>
     </div>
