@@ -27,26 +27,26 @@ function renderSidebar($role, $activePage) {
         </div>
         <ul class="nav flex-column mt-3">
             <?php if ($role === 'student'): ?>
-                <li class="nav-item">
+            <li class="nav-item">
                     <a class="nav-link <?php if($activePage=='dashboard') echo 'active'; ?>" href="index.php">
                         <i class="fa fa-home me-2"></i>Dashboard
                     </a>
-                </li>
-                <li class="nav-item">
+            </li>
+            <li class="nav-item">
                     <a class="nav-link <?php if($activePage=='notifications') echo 'active'; ?>" href="notifications.php">
                         <i class="fa fa-bell me-2"></i>Notifications
                     </a>
-                </li>
-                <li class="nav-item">
+            </li>
+            <li class="nav-item">
                     <a class="nav-link <?php if($activePage=='queue-schedule') echo 'active'; ?>" href="queue-schedule.php">
                         <i class="fa fa-calendar-alt me-2"></i>Upcoming Meetings
                     </a>
-                </li>
-                <li class="nav-item">
+            </li>
+            <li class="nav-item">
                     <a class="nav-link <?php if($activePage=='my-queues') echo 'active'; ?>" href="my-queues.php">
                         <i class="fa fa-list me-2"></i>My Queues
                     </a>
-                </li>
+            </li>
                 <li class="nav-item">
                     <a class="nav-link <?php if($activePage=='history') echo 'active'; ?>" href="history.php">
                         <i class="fa fa-history me-2"></i>Past Meetings
@@ -140,7 +140,7 @@ switch ($filter) {
         break;
 }
 
-    $stmt = $pdo->prepare($sql);
+$stmt = $pdo->prepare($sql);
 $stmt->execute([$_SESSION['user_id']]);
 $queues = $stmt->fetchAll();
 
@@ -252,22 +252,155 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mark_all_read'])) {
                 </div>
             </div>
         <?php elseif ($user_role === 'teacher'): ?>
-            <div class="row g-4">
-                <div class="col-md-6">
-                    <div class="card p-4 shadow-sm">
-                        <h5>Create Room</h5>
-                        <p>Set up a new meeting room for your students.</p>
-                        <a href="create-room.php" class="btn btn-primary">Create Room</a>
-                                    </div>
-                                    </div>
-                <div class="col-md-6">
-                    <div class="card p-4 shadow-sm">
-                        <h5>Manage Queues</h5>
-                        <p>View and manage all queues you oversee.</p>
-                        <a href="manage-queues.php" class="btn btn-primary">Manage Queues</a>
-                            </div>
-                            </div>
-                        </div>
+            <style>
+                body {
+                    background: linear-gradient(135deg, #e0e7ff 0%, #f8fafc 100%);
+                    min-height: 100vh;
+                    font-family: 'Segoe UI', 'Roboto', Arial, sans-serif;
+                }
+                .dashboard-main {
+                    min-height: 100vh;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: flex-start;
+                    padding: 3rem 0 2rem 0;
+                }
+                .dashboard-profile {
+                    display: flex;
+                    align-items: center;
+                    gap: 1.2rem;
+                    margin-bottom: 2.2rem;
+                }
+                .dashboard-avatar {
+                    width: 64px;
+                    height: 64px;
+                    border-radius: 50%;
+                    background: linear-gradient(135deg, #6366f1 60%, #a5b4fc 100%);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-size: 2.2rem;
+                    color: #fff;
+                    box-shadow: 0 2px 12px rgba(99,102,241,0.13);
+                }
+                .dashboard-profile-info {
+                    display: flex;
+                    flex-direction: column;
+                }
+                .dashboard-welcome {
+                    font-size: 1.45rem;
+                    font-weight: 700;
+                    color: #1e293b;
+                }
+                .dashboard-role {
+                    color: #6366f1;
+                    font-size: 1.05rem;
+                    font-weight: 500;
+                }
+                .dashboard-section-title {
+                    font-size: 1.25rem;
+                    font-weight: 600;
+                    color: #334155;
+                    margin-bottom: 1.2rem;
+                    margin-top: 0.5rem;
+                    letter-spacing: 0.01em;
+                }
+                .dashboard-cards {
+                    display: grid;
+                    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+                    gap: 2.2rem;
+                    width: 100%;
+                    max-width: 980px;
+                    margin-bottom: 2.5rem;
+                }
+                .dashboard-card {
+                    background: linear-gradient(120deg, #f8fafc 60%, #e0e7ff 100%);
+                    border-radius: 20px;
+                    box-shadow: 0 8px 32px rgba(30,41,59,0.13), 0 1.5px 6px rgba(99,102,241,0.08);
+                    padding: 2.2rem 1.7rem 1.7rem 1.7rem;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    text-align: center;
+                    transition: box-shadow 0.22s, transform 0.22s;
+                    position: relative;
+                }
+                .dashboard-card:hover {
+                    box-shadow: 0 12px 40px rgba(99,102,241,0.18), 0 2px 12px rgba(99,102,241,0.10);
+                    transform: translateY(-4px) scale(1.025);
+                }
+                .dashboard-card .dashboard-action-icon {
+                    font-size: 2.3rem;
+                    color: #6366f1;
+                    margin-bottom: 1.1rem;
+                    transition: color 0.18s, transform 0.18s;
+                }
+                .dashboard-card:hover .dashboard-action-icon {
+                    color: #2563eb;
+                    transform: scale(1.12) rotate(-6deg);
+                }
+                .dashboard-action-title {
+                    font-size: 1.18rem;
+                    font-weight: 600;
+                    margin-bottom: 0.3rem;
+                    color: #1e293b;
+                }
+                .dashboard-action-desc {
+                    color: #64748b;
+                    font-size: 1.04rem;
+                    margin-bottom: 1.2rem;
+                }
+                .btn-primary {
+                    width: 100%;
+                    padding: 0.8rem 0;
+                    border: none;
+                    border-radius: 14px;
+                    background: linear-gradient(90deg, #6366f1 0%, #2563eb 100%);
+                    color: #fff;
+                    font-size: 1.1rem;
+                    font-weight: 600;
+                    box-shadow: 0 2px 8px rgba(99,102,241,0.08);
+                    transition: background 0.2s, transform 0.15s, box-shadow 0.18s;
+                    cursor: pointer;
+                }
+                .btn-primary:hover, .btn-primary:focus {
+                    background: linear-gradient(90deg, #2563eb 0%, #6366f1 100%);
+                    transform: translateY(-2px) scale(1.03);
+                    box-shadow: 0 4px 16px rgba(99,102,241,0.13);
+                }
+                @media (max-width: 900px) {
+                    .dashboard-cards { grid-template-columns: 1fr; }
+                }
+                @media (max-width: 600px) {
+                    .dashboard-main { padding: 1.2rem 0.2rem; }
+                    .dashboard-cards { gap: 1.2rem; }
+                }
+            </style>
+            <div class="dashboard-main">
+              <div class="dashboard-profile">
+                <div class="dashboard-avatar"><i class="fa fa-chalkboard-teacher"></i></div>
+                <div class="dashboard-profile-info">
+                  <div class="dashboard-welcome">Welcome, <?php echo htmlspecialchars($user['name'] ?? $user['email']); ?>!</div>
+                  <div class="dashboard-role">Teacher</div>
+                </div>
+              </div>
+              <div class="dashboard-section-title">Actions & Management Tools</div>
+              <div class="dashboard-cards">
+                <div class="dashboard-card">
+                  <div class="dashboard-action-icon"><i class="fa fa-plus-circle"></i></div>
+                  <div class="dashboard-action-title">Create Room</div>
+                  <div class="dashboard-action-desc">Set up a new meeting room for your students.</div>
+                  <a href="create-room.php" class="btn-primary">Create Room</a>
+                </div>
+                <div class="dashboard-card">
+                  <div class="dashboard-action-icon"><i class="fa fa-tasks"></i></div>
+                  <div class="dashboard-action-title">Manage Queues</div>
+                  <div class="dashboard-action-desc">View and manage all queues you oversee.</div>
+                  <a href="manage-queues.php" class="btn-primary">Manage Queues</a>
+                </div>
+              </div>
+            </div>
         <?php elseif ($user_role === 'admin'): ?>
             <div class="row g-4">
                 <div class="col-md-6">
@@ -277,8 +410,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mark_all_read'])) {
                         <a href="admin.php" class="btn btn-primary">Go to Admin Panel</a>
                     </div>
                 </div>
-                </div>
-            <?php endif; ?>
+            </div>
+        <?php endif; ?>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
