@@ -245,9 +245,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mark_all_read'])) {
                 </div>
                 <div class="col-md-6">
                     <div class="card p-4 shadow-sm">
-                        <h5>Upcoming Events</h5>
-                        <p>See your upcoming meetings and events.</p>
-                        <a href="queue-schedule.php" class="btn btn-primary">View Events</a>
+                        <h5>Upcoming Meetings</h5>
+                        <p>See your upcoming meetings.</p>
+                        <a href="queue-schedule.php" class="btn btn-primary">View Meetings</a>
                     </div>
                 </div>
             </div>

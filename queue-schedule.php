@@ -11,7 +11,7 @@ $user = $stmt->fetch();
 
 ob_start();
 ?>
-<h2>Upcoming Events</h2>
+<h2>Upcoming Meetings</h2>
 <div class="mt-4">
     <div class="row g-4">
         <?php
@@ -47,7 +47,7 @@ ob_start();
         if (empty($upcoming_queues)): ?>
             <div class="col-12">
                 <div class="alert alert-info">
-                    No upcoming events found.
+                    No upcoming meetings found.
                 </div>
             </div>
         <?php else:
