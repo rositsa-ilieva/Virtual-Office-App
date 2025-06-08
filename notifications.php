@@ -62,6 +62,46 @@ $stmt = $pdo->prepare('SELECT COUNT(*) as count FROM notifications WHERE user_id
 $stmt->execute([$user_id]);
 $notification_count = $stmt->fetch()['count'];
 
+// Fetch student messages
+if ($user_role === 'teacher') {
+    $stmt = $pdo->prepare('SELECT n.*, u.name as student_name FROM notifications n JOIN users u ON n.related_user_id = u.id WHERE n.user_id = ? AND n.type = "student_message" ORDER BY n.created_at DESC');
+    $stmt->execute([$user_id]);
+    $student_messages = $stmt->fetchAll();
+}
+
+// Handle mark as read
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mark_read'])) {
+    $stmt = $pdo->prepare('UPDATE notifications SET is_read = 1 WHERE id = ? AND user_id = ?');
+    $stmt->execute([$_POST['mark_read'], $user_id]);
+    header('Location: notifications.php');
+    exit();
+}
+
+// Handle reply
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reply_message']) && isset($_POST['reply_to']) && isset($_POST['queue_id'])) {
+    $reply = trim($_POST['reply_message']);
+    if ($reply !== '') {
+        $stmt = $pdo->prepare('INSERT INTO notifications (user_id, type, message, related_queue_id, related_user_id) VALUES (?, "teacher_reply", ?, ?, ?)');
+        $stmt->execute([$_POST['reply_to'], $reply, $_POST['queue_id'], $user_id]);
+        echo '<div class="alert alert-success">Reply sent to student!</div>';
+    }
+}
+
+// Handle AJAX reply
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajax_reply'])) {
+    $reply = trim($_POST['reply_message'] ?? '');
+    $student_id = (int)($_POST['student_id'] ?? 0);
+    $queue_id = (int)($_POST['queue_id'] ?? 0);
+    if ($reply !== '' && $student_id && $queue_id) {
+        $stmt = $pdo->prepare('INSERT INTO notifications (user_id, type, message, related_queue_id, related_user_id) VALUES (?, "teacher_reply", ?, ?, ?)');
+        $stmt->execute([$student_id, $reply, $queue_id, $user_id]);
+        echo json_encode(['success' => true]);
+        exit;
+    }
+    echo json_encode(['success' => false]);
+    exit;
+}
+
 ob_start();
 ?>
 <h2>Notifications</h2>
@@ -134,6 +174,76 @@ ob_start();
         endif; ?>
     </div>
 </div>
+
+<?php if ($user_role === 'teacher'): ?>
+    <h3>Student Messages</h3>
+    <div class="mt-4">
+        <div class="row g-4">
+            <?php
+            foreach ($student_messages as $msg): ?>
+                <div class="col-12">
+                    <div class="notification-card">
+                        <strong>Message from <?php echo htmlspecialchars($msg['student_name']); ?>:</strong><br>
+                        <span><?php echo htmlspecialchars($msg['message']); ?></span><br>
+                        <?php if (!$msg['is_read']): ?>
+                            <form method="POST" style="display:inline;">
+                                <input type="hidden" name="mark_read" value="<?php echo $msg['id']; ?>">
+                                <button type="submit" class="btn btn-success btn-sm">Mark as Read</button>
+                            </form>
+                        <?php else: ?>
+                            <span class="badge bg-secondary">Read</span>
+                        <?php endif; ?>
+                        <form method="POST" style="margin-top:8px;">
+                            <input type="hidden" name="reply_to" value="<?php echo $msg['related_user_id']; ?>">
+                            <input type="hidden" name="queue_id" value="<?php echo $msg['related_queue_id']; ?>">
+                            <textarea name="reply_message" class="form-control mb-2" rows="2" placeholder="Reply..."></textarea>
+                            <button type="submit" class="btn btn-primary btn-sm">Reply</button>
+                        </form>
+                    </div>
+                </div>
+            <?php endforeach; ?>
+        </div>
+    </div>
+<?php endif; ?>
+<script>
+document.querySelectorAll('.reply-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        const id = this.getAttribute('data-id');
+        document.getElementById('reply-form-' + id).style.display = 'block';
+    });
+});
+function hideReplyForm(id) {
+    document.getElementById('reply-form-' + id).style.display = 'none';
+}
+document.querySelectorAll('.reply-form').forEach(form => {
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const notifId = this.getAttribute('data-id');
+        const studentId = this.querySelector('input[name="student_id"]').value;
+        const queueId = this.querySelector('input[name="queue_id"]').value;
+        const message = this.querySelector('input[name="reply_message"]').value;
+        const formData = new FormData();
+        formData.append('ajax_reply', '1');
+        formData.append('student_id', studentId);
+        formData.append('queue_id', queueId);
+        formData.append('reply_message', message);
+        fetch('notifications.php', {
+            method: 'POST',
+            body: formData
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                form.reset();
+                hideReplyForm(notifId);
+                alert('Reply sent!');
+            } else {
+                alert('Error sending reply.');
+            }
+        });
+    });
+});
+</script>
 <?php
 $content = ob_get_clean();
 require 'layout.php';
