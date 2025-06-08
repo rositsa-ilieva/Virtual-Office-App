@@ -11,62 +11,144 @@ $user = $stmt->fetch();
 
 ob_start();
 ?>
-<h2>My Queues</h2>
-<div class="mt-4">
-    <div class="row g-4">
-        <?php
-        // Get all queues where this student is currently waiting or in a meeting
-        $sql = "SELECT q.id as queue_id, q.purpose, q.meeting_link, q.access_code, qe.position as my_position, u.name as teacher_name, u.email as teacher_email, u.subjects as teacher_subjects
-                FROM queue_entries qe
-                JOIN queues q ON qe.queue_id = q.id
-                JOIN users u ON q.teacher_id = u.id
-                WHERE qe.student_id = ? AND qe.status IN ('waiting', 'in_meeting')
-                ORDER BY qe.position ASC";
-        $stmt = $pdo->prepare($sql);
-        $stmt->execute([$user_id]);
-        $my_queues = $stmt->fetchAll();
-
-        if (empty($my_queues)): ?>
-            <div class="col-12">
-                <div class="alert alert-info">
-                    You are not currently in any queues.
-                </div>
-            </div>
-        <?php else:
-            foreach ($my_queues as $queue): ?>
-                <div class="col-md-6">
-                    <div class="card shadow-sm">
-                        <div class="card-body">
-                            <h5 class="card-title"><?php echo htmlspecialchars($queue['purpose']); ?></h5>
-                            <p class="card-text">
-                                <strong>Position:</strong> <?php echo $queue['my_position']; ?><br>
-                                <?php if ($queue['meeting_link']): ?>
-                                    <strong>Meeting Link:</strong> <span id="meetingLink-<?php echo $queue['queue_id']; ?>"><?php echo htmlspecialchars($queue['meeting_link']); ?></span>
-                                    <button class="copy-btn" type="button" data-code="<?php echo htmlspecialchars($queue['meeting_link']); ?>">Copy</button><br>
-                                <?php endif; ?>
-                                <?php if (!empty($queue['access_code'])): ?>
-                                    <div class="queue-access" style="margin-bottom: 10px;">
-                                        <i class="fas fa-key"></i>
-                                        Access Code: <span class="queue-access-copy" data-code="<?php echo htmlspecialchars($queue['access_code']); ?>"><?php echo htmlspecialchars($queue['access_code']); ?></span>
-                                        <button type="button" class="btn btn-outline-primary btn-sm copy-btn" data-code="<?php echo htmlspecialchars($queue['access_code']); ?>">Copy</button>
-                                    </div>
-                                <?php endif; ?>
-                            </p>
-                            <div class="teacher-info" style="margin-bottom:10px;">
-                                <strong>Teacher:</strong> <?php echo htmlspecialchars($queue['teacher_name']); ?><br>
-                                <strong>Email:</strong> <a href="mailto:<?php echo htmlspecialchars($queue['teacher_email']); ?>"><?php echo htmlspecialchars($queue['teacher_email']); ?></a><br>
-                                <strong>Subjects:</strong> <?php echo htmlspecialchars($queue['teacher_subjects'] ?? ''); ?>
-                            </div>
-                            <div class="queue-actions" style="margin-top: 12px; display: flex; gap: 10px; flex-wrap: wrap;">
-                                <a href="queue-members.php?id=<?php echo $queue['queue_id']; ?>" class="btn btn-primary">View Queue</a>
-                                <button type="button" class="btn btn-info" onclick="showMessageModal(<?php echo $queue['queue_id']; ?>, '<?php echo htmlspecialchars(addslashes($queue['purpose'])); ?>')">Send Message to Teacher</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            <?php endforeach;
-        endif; ?>
-    </div>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+<style>
+.myqueues-title {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #1e293b;
+    text-align: left;
+    margin: 2.5rem 0 2rem 0;
+    letter-spacing: 0.01em;
+}
+.myqueues-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+    gap: 2.2rem;
+    width: 100%;
+    max-width: 980px;
+    margin: 0 auto 2.5rem auto;
+    justify-content: center;
+}
+.myqueue-card {
+    background: linear-gradient(120deg, #f8fafc 60%, #e0e7ff 100%);
+    border-radius: 20px;
+    box-shadow: 0 8px 32px rgba(30,41,59,0.13), 0 1.5px 6px rgba(99,102,241,0.08);
+    padding: 2.2rem 1.7rem 1.7rem 1.7rem;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    text-align: left;
+    transition: box-shadow 0.22s, transform 0.22s;
+    position: relative;
+    min-width: 0;
+}
+.myqueue-card-title {
+    font-size: 1.18rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 0.7rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+.myqueue-card-meta {
+    font-size: 1.04rem;
+    color: #334155;
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+.myqueue-card-position {
+    font-size: 0.98rem;
+    color: #64748b;
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+.myqueue-card-status {
+    font-size: 1.01rem;
+    font-weight: 600;
+    margin-bottom: 1.1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+.myqueue-card-status.waiting { color: #6366f1; }
+.myqueue-card-status.in_meeting { color: #2563eb; }
+.myqueue-card-status.skipped { color: #f59e42; }
+.myqueue-card-status.other { color: #64748b; }
+.myqueue-card-actions {
+    margin-top: 1.1rem;
+    display: flex;
+    justify-content: center;
+    width: 100%;
+}
+.btn-primary {
+    padding: 0.7rem 1.5rem;
+    border: none;
+    border-radius: 14px;
+    background: linear-gradient(90deg, #6366f1 0%, #2563eb 100%);
+    color: #fff;
+    font-size: 1.1rem;
+    font-weight: 600;
+    box-shadow: 0 2px 8px rgba(99,102,241,0.08);
+    transition: background 0.2s, transform 0.15s, box-shadow 0.18s;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-block;
+}
+.btn-primary:hover, .btn-primary:focus {
+    background: linear-gradient(90deg, #2563eb 0%, #6366f1 100%);
+    transform: translateY(-2px) scale(1.03);
+    box-shadow: 0 4px 16px rgba(99,102,241,0.13);
+}
+@media (max-width: 900px) {
+    .myqueues-cards { grid-template-columns: 1fr; }
+}
+@media (max-width: 600px) {
+    .myqueues-title { font-size: 1.3rem; margin: 1.2rem 0 1rem 0; }
+    .myqueues-cards { gap: 1.2rem; }
+    .myqueue-card { padding: 1.2rem 0.7rem; }
+}
+</style>
+<div class="myqueues-title"><i class="fa fa-list"></i> My Queues</div>
+<div class="myqueues-cards">
+<?php
+// Get all queues where this student is currently waiting or in a meeting
+$sql = "SELECT q.id as queue_id, q.purpose, q.description, q.meeting_link, q.access_code, q.start_time, qe.position as my_position, qe.status, qe.estimated_start_time, u.name as teacher_name, u.email as teacher_email, u.subjects as teacher_subjects
+        FROM queue_entries qe
+        JOIN queues q ON qe.queue_id = q.id
+        JOIN users u ON q.teacher_id = u.id
+        WHERE qe.student_id = ? AND qe.status IN ('waiting', 'in_meeting', 'skipped')
+        ORDER BY qe.position ASC";
+$stmt = $pdo->prepare($sql);
+$stmt->execute([$user_id]);
+$my_queues = $stmt->fetchAll();
+if (empty($my_queues)) {
+    echo '<div style="grid-column:1/-1;text-align:center;color:#64748b;font-size:1.15rem;padding:2.5rem 0;">\uD83D\uDEAB You are not currently in any queues.</div>';
+} else {
+    foreach ($my_queues as $queue) {
+        $status = isset($queue['status']) ? strtolower($queue['status']) : 'waiting';
+        $statusIcon = $status === 'waiting' ? '⏳' : ($status === 'in_meeting' ? '🟢' : ($status === 'skipped' ? '❌' : '🕓'));
+        $statusClass = $status === 'waiting' ? 'waiting' : ($status === 'in_meeting' ? 'in_meeting' : ($status === 'skipped' ? 'skipped' : 'other'));
+        echo '<div class="myqueue-card">';
+        echo '<div class="myqueue-card-title"><i class="fa fa-list"></i> ' . htmlspecialchars($queue['purpose']) . '</div>';
+        echo '<div class="myqueue-card-meta"><i class="fa fa-chalkboard-teacher"></i> ' . htmlspecialchars($queue['teacher_name']) . '</div>';
+        if (!empty($queue['start_time'])) {
+            echo '<div class="myqueue-card-meta"><i class="fa fa-calendar-alt"></i> ' . date('M d, Y g:i A', strtotime($queue['start_time'])) . '</div>';
+        }
+        echo '<div class="myqueue-card-position"><i class="fa fa-list-ol"></i> Position: ' . htmlspecialchars($queue['my_position']) . '</div>';
+        echo '<div class="myqueue-card-status ' . $statusClass . '">' . $statusIcon . ' ' . ucfirst(str_replace('_', ' ', $status)) . '</div>';
+        echo '<div class="myqueue-card-actions">';
+        echo '<a href="queue-members.php?id=' . $queue['queue_id'] . '" class="btn-primary"><i class="fa fa-users"></i> View Queue Members</a>';
+        echo '</div>';
+        echo '</div>';
+    }
+}
+?>
 </div>
 
 <!-- Modal for sending message -->

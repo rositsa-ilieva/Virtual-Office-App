@@ -32,6 +32,7 @@ CREATE TABLE IF NOT EXISTS queues (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   target_specialization VARCHAR(50) DEFAULT 'All',
   target_year VARCHAR(20) DEFAULT 'All',
+  specialization_year_map TEXT DEFAULT NULL,
   FOREIGN KEY (teacher_id) REFERENCES users(id)
 );
 

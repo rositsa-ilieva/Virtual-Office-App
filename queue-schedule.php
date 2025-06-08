@@ -123,15 +123,29 @@ if ($user_role === 'student') {
                    (SELECT status FROM queue_entries WHERE queue_id = q.id AND student_id = ?) as my_status
             FROM queues q
             WHERE q.start_time > NOW() AND q.is_active = 1
-            AND (FIND_IN_SET(?, q.target_specialization) > 0)
-            AND (q.target_year = ? OR q.target_year = 'All')
             ORDER BY q.start_time ASC
-            LIMIT 10";
+            LIMIT 30";
     $stmt = $pdo->prepare($sql);
-    $stmt->execute([$user_id, $user_id, $user['specialization'], $user['year_of_study']]);
-    $upcoming_queues = array_filter($stmt->fetchAll(), function($queue) {
+    $stmt->execute([$user_id, $user_id]);
+    $all_queues = $stmt->fetchAll();
+    $upcoming_queues = array_filter($all_queues, function($queue) use ($user) {
         // Hide if student has status done, skipped, or completed
-        return !in_array($queue['my_status'], ['done', 'skipped', 'completed']);
+        if (in_array($queue['my_status'], ['done', 'skipped', 'completed'])) return false;
+        // New filtering logic: specialization-year mapping
+        if (!empty($queue['specialization_year_map'])) {
+            $map = json_decode($queue['specialization_year_map'], true);
+            if (!is_array($map)) return false;
+            $spec = $user['specialization'] ?? '';
+            $year = $user['year_of_study'] ?? '';
+            return isset($map[$spec]) && in_array($year, $map[$spec]);
+        } else {
+            // Fallback to old logic if mapping not present
+            $spec = $user['specialization'] ?? '';
+            $year = $user['year_of_study'] ?? '';
+            $specMatch = (empty($queue['target_specialization']) || $queue['target_specialization'] === 'All' || in_array($spec, explode(',', $queue['target_specialization'])));
+            $yearMatch = (empty($queue['target_year']) || $queue['target_year'] === 'All' || $queue['target_year'] === $year);
+            return $specMatch && $yearMatch;
+        }
     });
 } else {
     // For teachers: show all future, active events

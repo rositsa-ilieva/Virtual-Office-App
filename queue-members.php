@@ -241,6 +241,15 @@ try {
     }
 }
 
+// Find if the current user has a pending swap request as sender
+$pending_swap_with = null;
+// Check for outgoing swap requests (where current user is sender and status is pending)
+$pending_swap_stmt = $pdo->prepare('SELECT receiver_id FROM swap_requests WHERE queue_id = ? AND sender_id = ? AND status = "pending" LIMIT 1');
+$pending_swap_stmt->execute([$queue_id, $user_id]);
+if ($row = $pending_swap_stmt->fetch()) {
+    $pending_swap_with = $row['receiver_id'];
+}
+
 // Calculate dynamic position for the current user
 function getStudentPosition($members, $user_id) {
     $pos = 1;
@@ -266,11 +275,129 @@ $activePage = 'create-room'; // in create-room.php
 
 ob_start();
 ?>
-<h2>Queue: <?php echo htmlspecialchars($queue['purpose']); ?></h2>
-<div class="mb-4">
-    <strong>Your Position:</strong> <?php echo $current_user_position; ?>
-</div>
-
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+<style>
+.queue-title {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 2.5rem 0 1.2rem 0;
+    letter-spacing: 0.01em;
+}
+.queue-position-badge {
+    display: inline-flex;
+    align-items: center;
+    background: linear-gradient(90deg, #6366f1 0%, #e0e7ff 100%);
+    color: #fff;
+    font-weight: 600;
+    font-size: 1.08rem;
+    border-radius: 16px;
+    padding: 0.5em 1.3em;
+    margin-bottom: 2.2rem;
+    box-shadow: 0 2px 8px rgba(99,102,241,0.10);
+    gap: 0.7em;
+}
+.queue-members-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1.3rem;
+    width: 100%;
+    max-width: 900px;
+    margin: 0 auto 2.5rem auto;
+}
+.queue-member-card {
+    background: linear-gradient(120deg, #f8fafc 60%, #e0e7ff 100%);
+    border-radius: 18px;
+    box-shadow: 0 4px 24px rgba(30,41,59,0.10), 0 1.5px 6px rgba(99,102,241,0.08);
+    padding: 1.3rem 1.5rem 1.1rem 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+    min-width: 0;
+}
+.queue-member-card.me {
+    border: 2.5px solid #6366f1;
+    background: linear-gradient(120deg, #e0e7ff 60%, #f8fafc 100%);
+}
+.queue-member-info {
+    flex: 1 1 220px;
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    min-width: 0;
+}
+.queue-member-row {
+    display: flex;
+    align-items: center;
+    gap: 1.1rem;
+    flex-wrap: wrap;
+}
+.queue-member-label {
+    font-size: 1.01rem;
+    color: #334155;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 0.4em;
+}
+.queue-member-status {
+    font-size: 1.01rem;
+    font-weight: 600;
+    margin-left: 0.7rem;
+    display: flex;
+    align-items: center;
+    gap: 0.4em;
+}
+.queue-member-status.waiting { color: #6366f1; }
+.queue-member-status.in_meeting { color: #2563eb; }
+.queue-member-status.away { color: #f59e42; }
+.queue-member-status.other { color: #64748b; }
+.queue-member-actions {
+    display: flex;
+    gap: 0.7rem;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+}
+.btn-modern {
+    padding: 0.6rem 1.3rem;
+    border: none;
+    border-radius: 14px;
+    background: linear-gradient(90deg, #6366f1 0%, #2563eb 100%);
+    color: #fff;
+    font-size: 1.05rem;
+    font-weight: 600;
+    box-shadow: 0 2px 8px rgba(99,102,241,0.08);
+    transition: background 0.2s, transform 0.15s, box-shadow 0.18s;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-block;
+}
+.btn-modern:hover, .btn-modern:focus {
+    background: linear-gradient(90deg, #2563eb 0%, #6366f1 100%);
+    transform: translateY(-2px) scale(1.03);
+    box-shadow: 0 4px 16px rgba(99,102,241,0.13);
+}
+.btn-modern-warning {
+    background: linear-gradient(90deg, #f59e42 0%, #fbbf24 100%);
+    color: #fff;
+}
+.btn-modern-success {
+    background: linear-gradient(90deg, #10b981 0%, #22d3ee 100%);
+    color: #fff;
+}
+.btn-modern-danger {
+    background: linear-gradient(90deg, #ef4444 0%, #f87171 100%);
+    color: #fff;
+}
+@media (max-width: 700px) {
+    .queue-members-list { gap: 0.7rem; }
+    .queue-member-card { flex-direction: column; align-items: flex-start; gap: 0.7rem; padding: 1.1rem 0.7rem; }
+}
+</style>
+<div class="queue-title"><i class="fa fa-users"></i> Queue: <?php echo htmlspecialchars($queue['purpose']); ?></div>
+<div class="queue-position-badge"><i class="fa fa-thumbtack"></i> Your Position: <?php echo $current_user_position; ?></div>
 <?php
 // Show pending swap requests for the current user
 $pending_swaps = $pdo->prepare('SELECT n.*, u.name as from_user_name FROM notifications n JOIN users u ON n.related_user_id = u.id WHERE n.user_id = ? AND n.type = "swap_request" AND n.related_queue_id = ? AND n.is_read = 0 ORDER BY n.created_at DESC');
@@ -283,59 +410,67 @@ if (!empty($swap_requests)) {
         echo '<form method="POST" style="display:inline-block;margin-left:10px;">';
         echo '<input type="hidden" name="notification_id" value="' . $swap['id'] . '">';
         echo '<input type="hidden" name="from_user_id" value="' . $swap['related_user_id'] . '">';
-        echo '<button type="submit" name="action" value="approve_swap" class="btn btn-success btn-sm">Approve</button> ';
-        echo '<button type="submit" name="action" value="decline_swap" class="btn btn-danger btn-sm">Decline</button>';
+        echo '<button type="submit" name="action" value="approve_swap" class="btn-modern btn-modern-success btn-sm"><i class="fa fa-check"></i> Approve</button> ';
+        echo '<button type="submit" name="action" value="decline_swap" class="btn-modern btn-modern-danger btn-sm"><i class="fa fa-times"></i> Decline</button>';
         echo '</form></li>';
     }
     echo '</ul></div>';
 }
 ?>
-<div class="table-responsive">
-    <table class="table table-bordered align-middle">
-        <thead class="table-light">
-            <tr>
-                <th>Position</th>
-                <th>Name</th>
-                <th>Status</th>
-                <th>Estimated Start</th>
-                <th>Comment</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-        <?php if (empty($members)): ?>
-            <tr><td colspan="6" class="text-center">No students currently in queue.</td></tr>
-        <?php else:
-            foreach ($members as $entry): ?>
-                <tr<?php if ($entry['student_id'] == $user_id) echo ' style="background:#e6f7ff;font-weight:bold;"'; ?>>
-                    <td><?php echo $entry['position']; ?></td>
-                    <td><?php echo htmlspecialchars($entry['student_name']); ?></td>
-                    <td><?php echo ucfirst($entry['status']); ?></td>
-                    <td><?php echo $entry['estimated_start_time'] ? date('g:i A', strtotime($entry['estimated_start_time'])) : '-'; ?></td>
-                    <td><?php echo $entry['is_comment_public'] || $entry['student_id'] == $user_id ? htmlspecialchars($entry['comment']) : '-'; ?></td>
-                    <td>
-                        <?php if ($entry['student_id'] == $user_id): ?>
-                            <?php if ($entry['status'] === 'waiting'): ?>
-                                <form method="POST" style="display:inline-block;"><button type="submit" name="mark_away" class="btn btn-warning btn-sm">Mark Away</button></form>
-                            <?php elseif ($entry['status'] === 'away'): ?>
-                                <form method="POST" style="display:inline-block;"><button type="submit" name="return_queue" class="btn btn-primary btn-sm">Return</button></form>
-                            <?php elseif ($entry['status'] === 'in_meeting'): ?>
-                                <form method="POST" style="display:inline-block;"><button type="submit" name="end_meeting" class="btn btn-success btn-sm">End Meeting</button></form>
+<div class="queue-members-list">
+<?php if (empty($members)): ?>
+    <div style="text-align:center;color:#64748b;font-size:1.15rem;padding:2.5rem 0;">No students currently in queue.</div>
+<?php else:
+    foreach ($members as $entry):
+        $isMe = $entry['student_id'] == $user_id;
+        $status = strtolower($entry['status']);
+        $statusIcon = $status === 'waiting' ? '⏳' : ($status === 'in_meeting' ? '🟢' : ($status === 'away' ? '🚶' : '🕓'));
+        $statusClass = $status === 'waiting' ? 'waiting' : ($status === 'in_meeting' ? 'in_meeting' : ($status === 'away' ? 'away' : 'other'));
+        $isSwapPending = ($pending_swap_with !== null);
+        $isThisPending = ($pending_swap_with !== null && $entry['student_id'] == $pending_swap_with);
+?>
+    <div class="queue-member-card<?php if ($isMe) echo ' me'; ?>">
+        <div class="queue-member-info">
+            <div class="queue-member-row">
+                <span class="queue-member-label"><i class="fa fa-thumbtack"></i> Position: <?php echo $entry['position']; ?></span>
+                <span class="queue-member-label"><i class="fa fa-user"></i> <?php echo htmlspecialchars($entry['student_name']); ?></span>
+                <span class="queue-member-status <?php echo $statusClass; ?>"><?php echo $statusIcon . ' ' . ucfirst(str_replace('_', ' ', $status)); ?></span>
+            </div>
+            <div class="queue-member-row">
+                <span class="queue-member-label"><i class="fa fa-clock"></i> Estimated Start: <?php echo $entry['estimated_start_time'] ? date('g:i A', strtotime($entry['estimated_start_time'])) : '-'; ?></span>
+                <span class="queue-member-label"><i class="fa fa-comment"></i> <?php echo ($entry['is_comment_public'] || $isMe) ? htmlspecialchars($entry['comment']) : '-'; ?></span>
+            </div>
+        </div>
+        <div class="queue-member-actions">
+            <?php if ($isMe): ?>
+                <?php if ($entry['status'] === 'waiting'): ?>
+                    <form method="POST" style="display:inline-block;"><button type="submit" name="mark_away" class="btn-modern btn-modern-warning btn-sm"><i class="fa fa-walking"></i> Mark Away</button></form>
+                <?php elseif ($entry['status'] === 'away'): ?>
+                    <form method="POST" style="display:inline-block;"><button type="submit" name="return_queue" class="btn-modern btn-primary btn-sm"><i class="fa fa-undo"></i> Return</button></form>
+                <?php elseif ($entry['status'] === 'in_meeting'): ?>
+                    <form method="POST" style="display:inline-block;"><button type="submit" name="end_meeting" class="btn-modern btn-modern-success btn-sm"><i class="fa fa-check"></i> End Meeting</button></form>
+                <?php endif; ?>
+            <?php elseif ($entry['status'] === 'waiting' && !$isMe): ?>
+                <form method="POST" style="display:inline-block;">
+                    <input type="hidden" name="swap_with" value="<?php echo $entry['student_id']; ?>">
+                    <?php if ($isSwapPending): ?>
+                        <button type="button" class="btn-modern btn-primary btn-sm" disabled style="opacity:0.7;cursor:not-allowed;">
+                            <?php if ($isThisPending): ?>
+                                <i class="fa fa-clock"></i> Pending
+                                <span style="margin-left:0.5em;font-size:0.98em;color:#6366f1;vertical-align:middle;">⏳ Waiting for Response</span>
+                            <?php else: ?>
+                                <i class="fa fa-random"></i> Request Swap
                             <?php endif; ?>
-                        <?php elseif ($entry['status'] === 'waiting' && $entry['student_id'] != $user_id): ?>
-                            <form method="POST" style="display:inline-block;">
-                                <input type="hidden" name="swap_with" value="<?php echo $entry['student_id']; ?>">
-                                <button type="submit" name="request_swap" class="btn btn-outline-primary btn-sm">Request Swap</button>
-                            </form>
-                        <?php endif; ?>
-                    </td>
-                </tr>
-            <?php endforeach;
-        endif; ?>
-        </tbody>
-    </table>
+                        </button>
+                    <?php else: ?>
+                        <button type="submit" name="request_swap" class="btn-modern btn-primary btn-sm"><i class="fa fa-random"></i> Request Swap</button>
+                    <?php endif; ?>
+                </form>
+            <?php endif; ?>
+        </div>
+    </div>
+<?php endforeach; endif; ?>
 </div>
 <?php
-// Optionally, show past meetings, swap requests, etc.
 $content = ob_get_clean();
 require 'layout.php'; 

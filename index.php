@@ -362,7 +362,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mark_all_read'])) {
                 <div class="student-dashboard-profile-info">
                   <div class="student-dashboard-welcome">Welcome, <?php echo htmlspecialchars($user['name'] ?? $user['email']); ?>!</div>
                 </div>
-              </div>
+                    </div>
               <div class="student-dashboard-section-title">Quick Actions</div>
               <div class="student-dashboard-cards">
                 <div class="student-dashboard-card">
@@ -382,8 +382,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mark_all_read'])) {
                   <div class="student-dashboard-action-title">Past Meetings</div>
                   <div class="student-dashboard-action-desc">Review completed meetings.</div>
                   <a href="history.php" class="btn-primary">View History</a>
+                    </div>
                 </div>
-              </div>
             </div>
         <?php elseif ($user_role === 'teacher'): ?>
             <style>
@@ -518,7 +518,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mark_all_read'])) {
                   <div class="dashboard-welcome">Welcome, <?php echo htmlspecialchars($user['name'] ?? $user['email']); ?>!</div>
                   <div class="dashboard-role">Teacher</div>
                 </div>
-              </div>
+                    </div>
               <div class="dashboard-section-title">Actions & Management Tools</div>
               <div class="dashboard-cards">
                 <div class="dashboard-card">
@@ -533,7 +533,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mark_all_read'])) {
                   <div class="dashboard-action-desc">View and manage all queues you oversee.</div>
                   <a href="manage-queues.php" class="btn-primary">Manage Queues</a>
                 </div>
-              </div>
+                </div>
             </div>
         <?php elseif ($user_role === 'admin'): ?>
             <div class="row g-4">
