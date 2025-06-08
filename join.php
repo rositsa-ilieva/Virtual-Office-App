@@ -26,6 +26,21 @@ if (!$queue) {
     exit();
 }
 
+// Restrict join by specialization/year for students
+if ($_SESSION['user_role'] === 'student') {
+    $stmt = $pdo->prepare('SELECT specialization, year_of_study FROM users WHERE id = ?');
+    $stmt->execute([$user_id]);
+    $student = $stmt->fetch();
+    $allowed = (
+        (in_array($student['specialization'], explode(',', $queue['target_specialization'])) || $queue['target_specialization'] === 'All') &&
+        ($queue['target_year'] === 'All' || $queue['target_year'] === $student['year_of_study'])
+    );
+    if (!$allowed) {
+        echo '<div class="alert alert-danger">You are not allowed to join this meeting. It is only for ' . htmlspecialchars($queue['target_specialization']) . ' (' . htmlspecialchars($queue['target_year']) . ').</div>';
+        exit();
+    }
+}
+
 // Check if user is already in queue
 $stmt = $pdo->prepare('SELECT * FROM queue_entries WHERE queue_id = ? AND student_id = ?');
 $stmt->execute([$queue_id, $user_id]);

@@ -42,6 +42,27 @@ ob_start();
                             <label for="access_code" class="form-label">Access Code (if any)</label>
                             <input type="text" class="form-control" id="access_code" name="access_code">
                         </div>
+                        <div class="mb-3">
+                            <label for="target_specialization" class="form-label">Target Specialization</label>
+                            <select class="form-control" id="target_specialization" name="target_specialization[]" multiple required>
+                                <option value="Software Engineering">Software Engineering</option>
+                                <option value="Information Systems">Information Systems</option>
+                                <option value="Computer Science">Computer Science</option>
+                                <option value="Applied Mathematics">Applied Mathematics</option>
+                                <option value="Informatics">Informatics</option>
+                            </select>
+                            <small class="form-text text-muted">Hold Ctrl (Windows) or Cmd (Mac) to select multiple specializations.</small>
+                        </div>
+                        <div class="mb-3">
+                            <label for="target_year" class="form-label">Target Year</label>
+                            <select class="form-control" id="target_year" name="target_year" required>
+                                <option value="All">All</option>
+                                <option value="1st year">1st year</option>
+                                <option value="2nd year">2nd year</option>
+                                <option value="3rd year">3rd year</option>
+                                <option value="4th year">4th year</option>
+                            </select>
+                        </div>
                         <button type="submit" class="btn btn-primary">Create Meeting Room</button>
                     </form>
                 </div>

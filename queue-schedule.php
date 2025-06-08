@@ -16,17 +16,19 @@ ob_start();
     <div class="row g-4">
         <?php
         if ($user_role === 'student') {
-            // For students: only show events not finished by the student
+            // For students: only show events not finished by the student and matching specialization/year
             $sql = "SELECT q.*, 
                            (SELECT COUNT(*) FROM queue_entries WHERE queue_id = q.id AND status = 'waiting') as waiting_count,
                            (SELECT position FROM queue_entries WHERE queue_id = q.id AND student_id = ?) as my_position,
                            (SELECT status FROM queue_entries WHERE queue_id = q.id AND student_id = ?) as my_status
                     FROM queues q
                     WHERE q.start_time > NOW() AND q.is_active = 1
+                    AND (FIND_IN_SET(?, q.target_specialization) > 0)
+                    AND (q.target_year = ? OR q.target_year = 'All')
                     ORDER BY q.start_time ASC
                     LIMIT 10";
             $stmt = $pdo->prepare($sql);
-            $stmt->execute([$user_id, $user_id]);
+            $stmt->execute([$user_id, $user_id, $user['specialization'], $user['year_of_study']]);
             $upcoming_queues = array_filter($stmt->fetchAll(), function($queue) {
                 // Hide if student has status done, skipped, or completed
                 return !in_array($queue['my_status'], ['done', 'skipped', 'completed']);

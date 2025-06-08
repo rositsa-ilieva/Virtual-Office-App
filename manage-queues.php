@@ -55,7 +55,7 @@ if ($queue_id) {
             exit();
         }
         // Get all students currently waiting or in meeting
-        $sql = "SELECT qe.*, u.name as student_name FROM queue_entries qe JOIN users u ON qe.student_id = u.id WHERE qe.queue_id = ? AND qe.status IN ('waiting', 'in_meeting') ORDER BY qe.position ASC";
+        $sql = "SELECT qe.*, u.name as student_name, u.specialization as student_specialization FROM queue_entries qe JOIN users u ON qe.student_id = u.id WHERE qe.queue_id = ? AND qe.status IN ('waiting', 'in_meeting') ORDER BY qe.position ASC";
         $stmt = $pdo->prepare($sql);
         $stmt->execute([$queue_id]);
         $entries = $stmt->fetchAll();
@@ -65,7 +65,7 @@ if ($queue_id) {
             echo '<a href="' . htmlspecialchars($queue['meeting_link']) . '" target="_blank" class="btn btn-success">Open Meeting Link</a> ';
         }
         echo '<a href="manage-queues.php" class="btn btn-secondary">Back to My Queues</a></div>';
-        echo '<div class="table-responsive"><table class="table table-bordered align-middle"><thead class="table-light"><tr><th>Position</th><th>Name</th><th>Status</th><th>Action</th></tr></thead><tbody>';
+        echo '<div class="table-responsive"><table class="table table-bordered align-middle"><thead class="table-light"><tr><th>Position</th><th>Name</th><th>Specialization</th><th>Status</th><th>Action</th></tr></thead><tbody>';
         if (empty($entries)) {
             echo '<tr><td colspan="4" class="text-center">No students currently in queue.</td></tr>';
         } else {
@@ -73,6 +73,7 @@ if ($queue_id) {
                 echo '<tr>';
                 echo '<td>' . $entry['position'] . '</td>';
                 echo '<td>' . htmlspecialchars($entry['student_name']) . '</td>';
+                echo '<td>' . (!empty($entry['student_specialization']) ? htmlspecialchars($entry['student_specialization']) : 'Not set') . '</td>';
                 echo '<td>' . ucfirst($entry['status']) . '</td>';
                 echo '<td>';
                 if ($entry['status'] === 'waiting') {

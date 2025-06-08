@@ -20,6 +20,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $faculty_number = $_POST['faculty_number'] ?? '';
     $teacher_role = $_POST['teacher_role'] ?? '';
     $subjects = $_POST['subjects'] ?? '';
+    $specialization = $_POST['specialization'] ?? '';
+    $year_of_study = $_POST['year_of_study'] ?? '';
 
     if (empty($name) || empty($email) || empty($password) || empty($confirm_password) || empty($role)) {
         $error = 'Please fill in all required fields';
@@ -27,8 +29,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $error = 'Passwords do not match';
     } elseif (strlen($password) < 6) {
         $error = 'Password must be at least 6 characters long';
-    } elseif ($role === 'student' && empty($faculty_number)) {
-        $error = 'Faculty number is required for students';
+    } elseif ($role === 'student' && (empty($faculty_number) || empty($specialization) || empty($year_of_study))) {
+        $error = 'Faculty number, specialization, and year of study are required for students';
     } elseif ($role === 'teacher' && (empty($teacher_role) || empty($subjects))) {
         $error = 'Role and subjects are required for teachers';
     } else {
@@ -40,8 +42,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         } else {
             // Create new user
             $hashed_password = password_hash($password, PASSWORD_DEFAULT);
-            $stmt = $pdo->prepare('INSERT INTO users (name, email, password, role, faculty_number, teacher_role, subjects) VALUES (?, ?, ?, ?, ?, ?, ?)');
-            if ($stmt->execute([$name, $email, $hashed_password, $role, $faculty_number, $teacher_role, $subjects])) {
+            $stmt = $pdo->prepare('INSERT INTO users (name, email, password, role, faculty_number, teacher_role, subjects, specialization, year_of_study) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)');
+            if ($stmt->execute([$name, $email, $hashed_password, $role, $faculty_number, $teacher_role, $subjects, $specialization, $year_of_study])) {
                 header('Location: login.php?message=registered');
                 exit();
             } else {
@@ -107,6 +109,27 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     <label for="faculty_number">Faculty Number:</label>
                     <input type="text" id="faculty_number" name="faculty_number">
                 </div>
+                <div class="form-group student-fields" style="display: none;">
+                    <label for="specialization">Specialization:</label>
+                    <select id="specialization" name="specialization">
+                        <option value="">Select Specialization</option>
+                        <option value="Software Engineering">Software Engineering</option>
+                        <option value="Information Systems">Information Systems</option>
+                        <option value="Computer Science">Computer Science</option>
+                        <option value="Applied Mathematics">Applied Mathematics</option>
+                        <option value="Informatics">Informatics</option>
+                    </select>
+                </div>
+                <div class="form-group student-fields" style="display: none;">
+                    <label for="year_of_study">Year of Study:</label>
+                    <select id="year_of_study" name="year_of_study">
+                        <option value="">Select Year</option>
+                        <option value="1st year">1st year</option>
+                        <option value="2nd year">2nd year</option>
+                        <option value="3rd year">3rd year</option>
+                        <option value="4th year">4th year</option>
+                    </select>
+                </div>
                 <div class="form-group teacher-fields" style="display: none;">
                     <label for="teacher_role">Role/Position:</label>
                     <input type="text" id="teacher_role" name="teacher_role" placeholder="e.g., Professor, Assistant Professor">
@@ -130,17 +153,23 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         const role = document.getElementById('role').value;
         const studentFields = document.querySelectorAll('.student-fields');
         const teacherFields = document.querySelectorAll('.teacher-fields');
-        
+
         studentFields.forEach(field => {
             field.style.display = role === 'student' ? 'block' : 'none';
-            field.querySelector('input').required = role === 'student';
+            field.querySelectorAll('input, select').forEach(el => {
+                el.required = (role === 'student');
+            });
         });
-        
+
         teacherFields.forEach(field => {
             field.style.display = role === 'teacher' ? 'block' : 'none';
-            field.querySelector('input, textarea').required = role === 'teacher';
+            field.querySelectorAll('input, textarea').forEach(el => {
+                el.required = (role === 'teacher');
+            });
         });
     }
+    // Call once on page load to set correct visibility
+    document.addEventListener('DOMContentLoaded', toggleRoleFields);
     </script>
 </body>
 </html> 

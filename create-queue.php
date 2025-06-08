@@ -15,6 +15,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $max_students = (int)($_POST['max_students'] ?? 10);
     $meeting_link = trim($_POST['meeting_link'] ?? '');
     $access_code = trim($_POST['access_code'] ?? '');
+    $target_specialization = isset($_POST['target_specialization']) ? implode(',', $_POST['target_specialization']) : 'All';
+    $target_year = $_POST['target_year'] ?? 'All';
 
     $errors = [];
     if ($purpose === '') $errors[] = 'Purpose is required.';
@@ -24,7 +26,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($meeting_link === '') $errors[] = 'Meeting link is required.';
 
     if (empty($errors)) {
-        $stmt = $pdo->prepare('INSERT INTO queues (purpose, start_time, default_duration, max_students, meeting_link, access_code, teacher_id, is_active, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, 1, NOW())');
+        $stmt = $pdo->prepare('INSERT INTO queues (purpose, start_time, default_duration, max_students, meeting_link, access_code, teacher_id, is_active, created_at, target_specialization, target_year) VALUES (?, ?, ?, ?, ?, ?, ?, 1, NOW(), ?, ?)');
         $stmt->execute([
             $purpose,
             $start_time,
@@ -32,7 +34,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $max_students,
             $meeting_link,
             $access_code,
-            $teacher_id
+            $teacher_id,
+            $target_specialization,
+            $target_year
         ]);
         header('Location: index.php?message=room_created');
         exit();

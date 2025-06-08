@@ -8,7 +8,10 @@ CREATE TABLE IF NOT EXISTS users (
   email VARCHAR(100) NOT NULL UNIQUE,
   password VARCHAR(255) NOT NULL,
   role ENUM('teacher', 'student') NOT NULL,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  faculty_number VARCHAR(100) DEFAULT NULL,
+  specialization VARCHAR(50) DEFAULT NULL,
+  year_of_study VARCHAR(20) DEFAULT NULL
 );
 
 CREATE TABLE IF NOT EXISTS queues (
@@ -27,6 +30,8 @@ CREATE TABLE IF NOT EXISTS queues (
   start_time DATETIME NULL, -- queue start time
   end_time DATETIME NULL, -- queue end time
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  target_specialization VARCHAR(50) DEFAULT 'All',
+  target_year VARCHAR(20) DEFAULT 'All',
   FOREIGN KEY (teacher_id) REFERENCES users(id)
 );
 
