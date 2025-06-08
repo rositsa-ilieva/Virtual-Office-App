@@ -140,7 +140,7 @@ switch ($filter) {
         break;
 }
 
-$stmt = $pdo->prepare($sql);
+    $stmt = $pdo->prepare($sql);
 $stmt->execute([$_SESSION['user_id']]);
 $queues = $stmt->fetchAll();
 
@@ -258,16 +258,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mark_all_read'])) {
                         <h5>Create Room</h5>
                         <p>Set up a new meeting room for your students.</p>
                         <a href="create-room.php" class="btn btn-primary">Create Room</a>
-                    </div>
-                </div>
+                                    </div>
+                                    </div>
                 <div class="col-md-6">
                     <div class="card p-4 shadow-sm">
                         <h5>Manage Queues</h5>
                         <p>View and manage all queues you oversee.</p>
                         <a href="manage-queues.php" class="btn btn-primary">Manage Queues</a>
-                    </div>
-                </div>
-            </div>
+                            </div>
+                            </div>
+                        </div>
         <?php elseif ($user_role === 'admin'): ?>
             <div class="row g-4">
                 <div class="col-md-6">
@@ -277,8 +277,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mark_all_read'])) {
                         <a href="admin.php" class="btn btn-primary">Go to Admin Panel</a>
                     </div>
                 </div>
-            </div>
-        <?php endif; ?>
+                </div>
+            <?php endif; ?>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>

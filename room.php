@@ -40,30 +40,33 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 $stmt = $pdo->prepare('UPDATE queue_entries SET status = "in_meeting", started_at = NOW() WHERE id = ? AND queue_id = ?');
                 $stmt->execute([$entry_id, $queue_id]);
                 $custom_start_time_for_estimation = date('Y-m-d H:i:s');
+                // Do NOT shift/reorder positions here!
                 break;
             case 'end':
                 $stmt = $pdo->prepare('UPDATE queue_entries SET status = "done", ended_at = NOW() WHERE id = ? AND queue_id = ?');
                 $stmt->execute([$entry_id, $queue_id]);
+                // After ending, update positions for all waiting students
+                $pdo->exec('SET @pos = 0;');
+                $stmt = $pdo->prepare('UPDATE queue_entries SET position = (@pos:=@pos+1) WHERE queue_id = ? AND status = "waiting" ORDER BY joined_at ASC;');
+                $stmt->execute([$queue_id]);
                 break;
             case 'skip':
                 $stmt = $pdo->prepare('UPDATE queue_entries SET status = "skipped" WHERE id = ? AND queue_id = ?');
                 $stmt->execute([$entry_id, $queue_id]);
+                // After skipping, update positions for all waiting students
+                $pdo->exec('SET @pos = 0;');
+                $stmt = $pdo->prepare('UPDATE queue_entries SET position = (@pos:=@pos+1) WHERE queue_id = ? AND status = "waiting" ORDER BY joined_at ASC;');
+                $stmt->execute([$queue_id]);
                 break;
             case 'remove':
                 $stmt = $pdo->prepare('DELETE FROM queue_entries WHERE id = ? AND queue_id = ?');
                 $stmt->execute([$entry_id, $queue_id]);
+                // After removal, update positions for all waiting students
+                $pdo->exec('SET @pos = 0;');
+                $stmt = $pdo->prepare('UPDATE queue_entries SET position = (@pos:=@pos+1) WHERE queue_id = ? AND status = "waiting" ORDER BY joined_at ASC;');
+                $stmt->execute([$queue_id]);
                 break;
         }
-
-        // After any status change, update positions for all waiting students
-        $stmt = $pdo->prepare('
-            SET @pos = 0;
-            UPDATE queue_entries 
-            SET position = (@pos:=@pos+1) 
-            WHERE queue_id = ? AND status = "waiting" 
-            ORDER BY joined_at ASC;
-        ');
-        $stmt->execute([$queue_id]);
     }
 }
 
@@ -184,66 +187,66 @@ unset($entry);
                 <?php if (empty($entries)): ?>
                     <p class="no-entries">No students in queue</p>
                 <?php else: ?>
-                    <?php foreach ($entries as $entry): ?>
-                        <div class="queue-item" style="background:#fff;border-radius:8px;padding:18px 16px;margin-bottom:14px;box-shadow:0 1px 4px rgba(40,83,107,0.06);display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap;">
-                            <div class="student-info" style="flex:1;min-width:180px;">
-                                <span class="student-name" style="font-weight:600;font-size:1.1em;">👤 <?php echo htmlspecialchars($entry['student_name']); ?></span>
-                                <?php if ($entry['status'] === 'waiting'): ?>
-                                    <span class="position" style="margin-left:10px;color:#2563EB;">Position: <?php echo $entry['position']; ?></span>
-                                <?php endif; ?>
-                                <?php if ($entry['comment']): ?>
-                                    <span class="comment" style="display:block;color:#888;margin-top:4px;"><?php echo htmlspecialchars($entry['comment']); ?></span>
-                                <?php endif; ?>
-                            </div>
-                            <div class="status-badge status-<?php echo $entry['status']; ?>" style="min-width:90px;text-align:center;">
-                                <?php echo ucfirst($entry['status']); ?>
-                            </div>
-                            <?php if ($entry['status'] === 'waiting'): ?>
-                                <div class="estimated-time" style="min-width:120px;color:#555;">
-                                    <i class="fas fa-clock"></i> Est. Start: <?php echo date('g:i A', strtotime($entry['estimated_start_time'])); ?>
-                                </div>
-                            <?php endif; ?>
-                            <div class="actions" style="display:flex;gap:10px;align-items:center;">
-                                <?php if ($entry['status'] === 'waiting'): ?>
-                                    <?php if (!$in_meeting_entry): ?>
-                                        <?php if ($show_start_form == $entry['id']): ?>
-                                            <form method="POST" style="display:inline-block; margin-right:8px;">
+                    <table class="schedule-table">
+                        <thead>
+                            <tr>
+                                <th>Position</th>
+                                <th>Name</th>
+                                <th>Status</th>
+                                <th>Estimated Start Time</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($entries as $entry): ?>
+                                <tr>
+                                    <td><?php echo $entry['status'] === 'in_meeting' ? '-' : $entry['position']; ?></td>
+                                    <td><?php echo htmlspecialchars($entry['student_name']); ?></td>
+                                    <td><?php echo ucfirst($entry['status']); ?></td>
+                                    <td><?php echo $entry['estimated_start_time'] ? date('g:i A', strtotime($entry['estimated_start_time'])) : '-'; ?></td>
+                                    <td>
+                                        <?php if ($entry['status'] === 'waiting'): ?>
+                                            <?php if (!$in_meeting_entry): ?>
+                                                <?php if ($show_start_form == $entry['id']): ?>
+                                                    <form method="POST" style="display:inline-block; margin-right:8px;">
+                                                        <input type="hidden" name="entry_id" value="<?php echo $entry['id']; ?>">
+                                                        <input type="hidden" name="action" value="start">
+                                                        <button type="submit" class="btn btn-primary">Confirm Start</button>
+                                                    </form>
+                                                <?php else: ?>
+                                                    <form method="POST" style="display:inline-block;" onsubmit="return confirmAction('start', '<?php echo htmlspecialchars($entry['student_name']); ?>')">
+                                                        <input type="hidden" name="entry_id" value="<?php echo $entry['id']; ?>">
+                                                        <input type="hidden" name="action" value="show_start_form">
+                                                        <button type="submit" class="btn btn-primary">Start Meeting</button>
+                                                    </form>
+                                                <?php endif; ?>
+                                            <?php else: ?>
+                                                <button class="btn btn-primary" disabled>Start Meeting</button>
+                                            <?php endif; ?>
+                                        <?php elseif ($entry['status'] === 'in_meeting'): ?>
+                                            <form method="POST" style="display: inline;" onsubmit="return confirmAction('end', '<?php echo htmlspecialchars($entry['student_name']); ?>')">
                                                 <input type="hidden" name="entry_id" value="<?php echo $entry['id']; ?>">
-                                                <input type="hidden" name="action" value="start">
-                                                <button type="submit" class="btn btn-primary">Confirm Start</button>
-                                            </form>
-                                        <?php else: ?>
-                                            <form method="POST" style="display:inline-block;" onsubmit="return confirmAction('start', '<?php echo htmlspecialchars($entry['student_name']); ?>')">
-                                                <input type="hidden" name="entry_id" value="<?php echo $entry['id']; ?>">
-                                                <input type="hidden" name="action" value="show_start_form">
-                                                <button type="submit" class="btn btn-primary">Start Meeting</button>
+                                                <input type="hidden" name="action" value="end">
+                                                <button type="submit" class="btn btn-success">End Meeting</button>
                                             </form>
                                         <?php endif; ?>
-                                    <?php else: ?>
-                                        <button class="btn btn-primary" disabled>Start Meeting</button>
-                                    <?php endif; ?>
-                                <?php elseif ($entry['status'] === 'in_meeting'): ?>
-                                    <form method="POST" style="display: inline;" onsubmit="return confirmAction('end', '<?php echo htmlspecialchars($entry['student_name']); ?>')">
-                                        <input type="hidden" name="entry_id" value="<?php echo $entry['id']; ?>">
-                                        <input type="hidden" name="action" value="end">
-                                        <button type="submit" class="btn btn-success">End Meeting</button>
-                                    </form>
-                                <?php endif; ?>
-                                <form method="POST" style="display: inline;" onsubmit="return confirmAction('remove', '<?php echo htmlspecialchars($entry['student_name']); ?>')">
-                                    <input type="hidden" name="entry_id" value="<?php echo $entry['id']; ?>">
-                                    <input type="hidden" name="action" value="remove">
-                                    <button type="submit" class="btn btn-danger">Remove</button>
-                                </form>
-                                <?php if ($entry['status'] === 'waiting'): ?>
-                                    <form method="POST" style="display: inline;" onsubmit="return confirmAction('skip', '<?php echo htmlspecialchars($entry['student_name']); ?>')">
-                                        <input type="hidden" name="entry_id" value="<?php echo $entry['id']; ?>">
-                                        <input type="hidden" name="action" value="skip">
-                                        <button type="submit" class="btn btn-warning">Skip</button>
-                                    </form>
-                                <?php endif; ?>
-                            </div>
-                        </div>
-                    <?php endforeach; ?>
+                                        <form method="POST" style="display: inline;" onsubmit="return confirmAction('remove', '<?php echo htmlspecialchars($entry['student_name']); ?>')">
+                                            <input type="hidden" name="entry_id" value="<?php echo $entry['id']; ?>">
+                                            <input type="hidden" name="action" value="remove">
+                                            <button type="submit" class="btn btn-danger">Remove</button>
+                                        </form>
+                                        <?php if ($entry['status'] === 'waiting'): ?>
+                                            <form method="POST" style="display: inline;" onsubmit="return confirmAction('skip', '<?php echo htmlspecialchars($entry['student_name']); ?>')">
+                                                <input type="hidden" name="entry_id" value="<?php echo $entry['id']; ?>">
+                                                <input type="hidden" name="action" value="skip">
+                                                <button type="submit" class="btn btn-warning">Skip</button>
+                                            </form>
+                                        <?php endif; ?>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
                 <?php endif; ?>
             </div>
         </div>
