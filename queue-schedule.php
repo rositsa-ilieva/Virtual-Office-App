@@ -162,7 +162,7 @@ if (empty($upcoming_queues)): ?>
                 <?php if ($queue['waiting_count'] > 0): ?>
                     <i class="fa fa-hourglass-half"></i> Waiting
                 <?php else: ?>
-                    <i class="fa fa-info-circle"></i> <?php echo htmlspecialchars(ucfirst($queue['my_status'])); ?>
+                    <i class="fa fa-info-circle"></i> <?php echo htmlspecialchars(ucfirst($queue['my_status'] ?? '')); ?>
                 <?php endif; ?>
             </div>
             <div class="upcoming-card-actions">

@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS users (
   role ENUM('teacher', 'student') NOT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   faculty_number VARCHAR(100) DEFAULT NULL,
-  specialization VARCHAR(50) DEFAULT NULL,
+  specialization VARCHAR(100) DEFAULT NULL,
   year_of_study VARCHAR(20) DEFAULT NULL
 );
 
