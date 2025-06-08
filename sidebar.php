@@ -20,48 +20,55 @@ $activePage = $activePage ?? '';
     </div>
   </div>
   <ul class="nav flex-column p-3" style="flex:1 1 auto;">
-    <li class="nav-item mb-2">
-      <a class="nav-link d-flex align-items-center<?php if($activePage=='profile')echo' active'; ?>" href="profile.php" style="font-size:1.15rem;padding:12px 18px;"><i class="fas fa-user-cog me-2"></i> Profile / Settings</a>
-    </li>
-    <li class="nav-item mb-2">
-      <a class="nav-link d-flex align-items-center<?php if($activePage=='queue-schedule')echo' active'; ?>" href="queue-schedule.php" style="font-size:1.15rem;padding:12px 18px;"><i class="fas fa-calendar-alt me-2"></i> Upcoming Events</a>
-    </li>
-    <li class="nav-item mb-2">
-      <a class="nav-link d-flex align-items-center<?php if($activePage=='notifications')echo' active'; ?>" href="notifications.php" style="font-size:1.15rem;padding:12px 18px;position:relative;">
-        <i class="fas fa-bell me-2"></i> Notifications
-      </a>
-    </li>
     <?php if($user_role === 'student'): ?>
-    <li class="nav-item mb-2">
-      <a class="nav-link d-flex align-items-center<?php if($activePage=='my-queues')echo' active'; ?>" href="my-queues.php" style="font-size:1.15rem;padding:12px 18px;"><i class="fas fa-list me-2"></i> My Queues</a>
-    </li>
-    <li class="nav-item mb-2">
-      <a class="nav-link d-flex align-items-center<?php if($activePage=='history')echo' active'; ?>" href="history.php" style="font-size:1.15rem;padding:12px 18px;"><i class="fas fa-history me-2"></i> History</a>
-    </li>
-    <li class="nav-item mb-2">
-      <a class="nav-link d-flex align-items-center<?php if($activePage=='past-events')echo' active'; ?>" href="past-events.php" style="font-size:1.15rem;padding:12px 18px;"><i class="fas fa-clock me-2"></i> Past Events</a>
-    </li>
-    <?php endif; ?>
-    <?php if($user_role === 'teacher'): ?>
-    <li class="nav-item mb-2">
-      <a class="nav-link d-flex align-items-center<?php if($activePage=='create-room')echo' active'; ?>" href="create-room.php" style="font-size:1.15rem;padding:12px 18px;"><i class="fas fa-plus me-2"></i> Create Meeting / Room</a>
-    </li>
-    <li class="nav-item mb-2">
-      <a class="nav-link d-flex align-items-center<?php if($activePage=='manage-queues')echo' active'; ?>" href="manage-queues.php" style="font-size:1.15rem;padding:12px 18px;"><i class="fas fa-tasks me-2"></i> Manage Queues</a>
-    </li>
-    <li class="nav-item mb-2">
-      <a class="nav-link d-flex align-items-center<?php if($activePage=='stats')echo' active'; ?>" href="stats.php" style="font-size:1.15rem;padding:12px 18px;"><i class="fas fa-chart-bar me-2"></i> Stats</a>
-    </li>
-    <?php endif; ?>
-    <?php if($user_role === 'admin'): ?>
-    <li class="nav-item mb-2">
-      <a class="nav-link d-flex align-items-center<?php if($activePage=='admin')echo' active'; ?>" href="admin.php" style="font-size:1.15rem;padding:12px 18px;"><i class="fas fa-tools me-2"></i> Admin Panel</a>
-    </li>
+      <li class="nav-item mb-2">
+        <a class="nav-link d-flex align-items-center<?php if($activePage=='dashboard')echo' active'; ?>" href="index.php" style="font-size:1.15rem;padding:12px 18px;"><i class="fas fa-home me-2"></i> Dashboard</a>
+      </li>
+      <li class="nav-item mb-2">
+        <a class="nav-link d-flex align-items-center<?php if($activePage=='notifications')echo' active'; ?>" href="notifications.php" style="font-size:1.15rem;padding:12px 18px;position:relative;"><i class="fas fa-bell me-2"></i> Notifications</a>
+      </li>
+      <li class="nav-item mb-2">
+        <a class="nav-link d-flex align-items-center<?php if($activePage=='queue-schedule')echo' active'; ?>" href="queue-schedule.php" style="font-size:1.15rem;padding:12px 18px;"><i class="fas fa-calendar-alt me-2"></i> Upcoming Meetings</a>
+      </li>
+      <li class="nav-item mb-2">
+        <a class="nav-link d-flex align-items-center<?php if($activePage=='my-queues')echo' active'; ?>" href="my-queues.php" style="font-size:1.15rem;padding:12px 18px;"><i class="fas fa-list me-2"></i> My Queues</a>
+      </li>
+      <li class="nav-item mb-2">
+        <a class="nav-link d-flex align-items-center<?php if($activePage=='history')echo' active'; ?>" href="history.php" style="font-size:1.15rem;padding:12px 18px;"><i class="fas fa-history me-2"></i> Past Meetings</a>
+      </li>
+      <li class="nav-item mb-2">
+        <a class="nav-link d-flex align-items-center<?php if($activePage=='profile')echo' active'; ?>" href="profile.php" style="font-size:1.15rem;padding:12px 18px;"><i class="fas fa-user-cog me-2"></i> Profile Settings</a>
+      </li>
+      <li class="nav-item mt-3">
+        <a class="nav-link text-danger" href="logout.php" style="font-size:1.15rem;padding:12px 18px;"><i class="fa fa-sign-out-alt me-2"></i> Logout</a>
+      </li>
+    <?php elseif($user_role === 'teacher'): ?>
+      <li class="nav-item mb-2">
+        <a class="nav-link d-flex align-items-center<?php if($activePage=='dashboard')echo' active'; ?>" href="index.php" style="font-size:1.15rem;padding:12px 18px;"><i class="fas fa-home me-2"></i> Dashboard</a>
+      </li>
+      <li class="nav-item mb-2">
+        <a class="nav-link d-flex align-items-center<?php if($activePage=='notifications')echo' active'; ?>" href="notifications.php" style="font-size:1.15rem;padding:12px 18px;position:relative;"><i class="fas fa-bell me-2"></i> Notifications</a>
+      </li>
+      <li class="nav-item mb-2">
+        <a class="nav-link d-flex align-items-center<?php if($activePage=='queue-schedule')echo' active'; ?>" href="queue-schedule.php" style="font-size:1.15rem;padding:12px 18px;"><i class="fas fa-calendar-alt me-2"></i> Upcoming Meetings</a>
+      </li>
+      <li class="nav-item mb-2">
+        <a class="nav-link d-flex align-items-center<?php if($activePage=='create-room')echo' active'; ?>" href="create-room.php" style="font-size:1.15rem;padding:12px 18px;"><i class="fas fa-plus me-2"></i> Create Room</a>
+      </li>
+      <li class="nav-item mb-2">
+        <a class="nav-link d-flex align-items-center<?php if($activePage=='manage-queues')echo' active'; ?>" href="manage-queues.php" style="font-size:1.15rem;padding:12px 18px;"><i class="fas fa-tasks me-2"></i> Manage Queues</a>
+      </li>
+      <li class="nav-item mb-2">
+        <a class="nav-link d-flex align-items-center<?php if($activePage=='stats')echo' active'; ?>" href="stats.php" style="font-size:1.15rem;padding:12px 18px;"><i class="fas fa-chart-bar me-2"></i> Statistics</a>
+      </li>
+      <li class="nav-item mb-2">
+        <a class="nav-link d-flex align-items-center<?php if($activePage=='profile')echo' active'; ?>" href="profile.php" style="font-size:1.15rem;padding:12px 18px;"><i class="fas fa-user-cog me-2"></i> Profile Settings</a>
+      </li>
+      <li class="nav-item mt-3">
+        <a class="nav-link text-danger" href="logout.php" style="font-size:1.15rem;padding:12px 18px;"><i class="fa fa-sign-out-alt me-2"></i> Logout</a>
+      </li>
     <?php endif; ?>
   </ul>
-  <div class="sidebar-footer p-3" style="border-top:1px solid #232b3e;background:#192132;">
-    <a href="logout.php" class="btn btn-danger w-100" style="font-size:1.1rem;font-weight:600;">Log out</a>
-  </div>
 </nav>
 <style>
 .sidebar .nav-link {

@@ -15,17 +15,34 @@ ob_start();
 <div class="mt-4">
     <div class="row g-4">
         <?php
-        // Get upcoming queues
-        $sql = "SELECT q.*, 
-                       (SELECT COUNT(*) FROM queue_entries WHERE queue_id = q.id AND status = 'waiting') as waiting_count,
-                       (SELECT position FROM queue_entries WHERE queue_id = q.id AND student_id = ?) as my_position
-                FROM queues q
-                WHERE q.start_time > NOW()
-                ORDER BY q.start_time ASC
-                LIMIT 10";
-        $stmt = $pdo->prepare($sql);
-        $stmt->execute([$user_id]);
-        $upcoming_queues = $stmt->fetchAll();
+        if ($user_role === 'student') {
+            // For students: only show events not finished by the student
+            $sql = "SELECT q.*, 
+                           (SELECT COUNT(*) FROM queue_entries WHERE queue_id = q.id AND status = 'waiting') as waiting_count,
+                           (SELECT position FROM queue_entries WHERE queue_id = q.id AND student_id = ?) as my_position,
+                           (SELECT status FROM queue_entries WHERE queue_id = q.id AND student_id = ?) as my_status
+                    FROM queues q
+                    WHERE q.start_time > NOW() AND q.is_active = 1
+                    ORDER BY q.start_time ASC
+                    LIMIT 10";
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute([$user_id, $user_id]);
+            $upcoming_queues = array_filter($stmt->fetchAll(), function($queue) {
+                // Hide if student has status done, skipped, or completed
+                return !in_array($queue['my_status'], ['done', 'skipped', 'completed']);
+            });
+        } else {
+            // For teachers: show all future, active events
+            $sql = "SELECT q.*, 
+                           (SELECT COUNT(*) FROM queue_entries WHERE queue_id = q.id AND status = 'waiting') as waiting_count
+                    FROM queues q
+                    WHERE q.start_time > NOW() AND q.is_active = 1
+                    ORDER BY q.start_time ASC
+                    LIMIT 10";
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute();
+            $upcoming_queues = $stmt->fetchAll();
+        }
 
         if (empty($upcoming_queues)): ?>
             <div class="col-12">
@@ -43,11 +60,11 @@ ob_start();
                                 <strong>Date:</strong> <?php echo date('M d, Y', strtotime($queue['start_time'])); ?><br>
                                 <strong>Time:</strong> <?php echo date('g:i A', strtotime($queue['start_time'])); ?><br>
                                 <strong>Waiting:</strong> <?php echo $queue['waiting_count']; ?> students<br>
-                                <?php if ($queue['my_position']): ?>
+                                <?php if (isset($queue['my_position']) && $queue['my_position']): ?>
                                     <strong>Your Position:</strong> <?php echo $queue['my_position']; ?>
                                 <?php endif; ?>
                             </p>
-                            <?php if (!$queue['my_position']): ?>
+                            <?php if ($user_role === 'student' && empty($queue['my_status'])): ?>
                                 <a href="join.php?id=<?php echo $queue['id']; ?>" class="btn btn-primary">
                                     Join Queue
                                 </a>

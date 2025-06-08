@@ -43,6 +43,14 @@ if ($queue_id) {
             $pdo->exec("SET @pos = 0;");
             $stmt = $pdo->prepare('UPDATE queue_entries SET position = (@pos:=@pos+1) WHERE queue_id = ? AND status = "waiting" ORDER BY position');
             $stmt->execute([$queue_id]);
+            // After handling actions, check if the queue should be marked as ended
+            $stmt_check = $pdo->prepare("SELECT COUNT(*) FROM queue_entries WHERE queue_id = ? AND status IN ('waiting', 'in_meeting')");
+            $stmt_check->execute([$queue_id]);
+            $remaining = $stmt_check->fetchColumn();
+            if ($remaining == 0) {
+                $stmt_end = $pdo->prepare("UPDATE queues SET is_active = 0 WHERE id = ?");
+                $stmt_end->execute([$queue_id]);
+            }
             header('Location: manage-queues.php?queue_id=' . $queue_id);
             exit();
         }
@@ -52,7 +60,11 @@ if ($queue_id) {
         $stmt->execute([$queue_id]);
         $entries = $stmt->fetchAll();
         echo '<h2>Manage Queue: ' . htmlspecialchars($queue['purpose']) . '</h2>';
-        echo '<div class="mb-3"><a href="' . htmlspecialchars($queue['meeting_link']) . '" target="_blank" class="btn btn-success">Open Meeting Link</a> <a href="manage-queues.php" class="btn btn-secondary">Back to My Queues</a></div>';
+        echo '<div class="mb-3">';
+        if (!empty($queue['meeting_link'])) {
+            echo '<a href="' . htmlspecialchars($queue['meeting_link']) . '" target="_blank" class="btn btn-success">Open Meeting Link</a> ';
+        }
+        echo '<a href="manage-queues.php" class="btn btn-secondary">Back to My Queues</a></div>';
         echo '<div class="table-responsive"><table class="table table-bordered align-middle"><thead class="table-light"><tr><th>Position</th><th>Name</th><th>Status</th><th>Action</th></tr></thead><tbody>';
         if (empty($entries)) {
             echo '<tr><td colspan="4" class="text-center">No students currently in queue.</td></tr>';

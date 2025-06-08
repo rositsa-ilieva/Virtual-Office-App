@@ -26,27 +26,22 @@ function renderSidebar($role, $activePage, $user) {
             <div class="small text-muted"><?php echo htmlspecialchars($role); ?></div>
         </div>
         <ul class="nav flex-column mt-3">
-            <li class="nav-item">
-                <a class="nav-link <?php if($activePage=='dashboard') echo 'active'; ?>" href="index.php">
-                    <i class="fa fa-home me-2"></i>Dashboard
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link <?php if($activePage=='profile') echo 'active'; ?>" href="profile.php">
-                    <i class="fa fa-user me-2"></i>Profile/Settings
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link <?php if($activePage=='queue-schedule') echo 'active'; ?>" href="queue-schedule.php">
-                    <i class="fa fa-calendar-alt me-2"></i>Upcoming Events
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link <?php if($activePage=='notifications') echo 'active'; ?>" href="notifications.php">
-                    <i class="fa fa-bell me-2"></i>Notifications
-                </a>
-            </li>
             <?php if ($role === 'student'): ?>
+                <li class="nav-item">
+                    <a class="nav-link <?php if($activePage=='dashboard') echo 'active'; ?>" href="index.php">
+                        <i class="fa fa-home me-2"></i>Dashboard
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link <?php if($activePage=='notifications') echo 'active'; ?>" href="notifications.php">
+                        <i class="fa fa-bell me-2"></i>Notifications
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link <?php if($activePage=='queue-schedule') echo 'active'; ?>" href="queue-schedule.php">
+                        <i class="fa fa-calendar-alt me-2"></i>Upcoming Meetings
+                    </a>
+                </li>
                 <li class="nav-item">
                     <a class="nav-link <?php if($activePage=='my-queues') echo 'active'; ?>" href="my-queues.php">
                         <i class="fa fa-list me-2"></i>My Queues
@@ -54,10 +49,30 @@ function renderSidebar($role, $activePage, $user) {
                 </li>
                 <li class="nav-item">
                     <a class="nav-link <?php if($activePage=='history') echo 'active'; ?>" href="history.php">
-                        <i class="fa fa-history me-2"></i>History
+                        <i class="fa fa-history me-2"></i>Past Meetings
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link <?php if($activePage=='profile') echo 'active'; ?>" href="profile.php">
+                        <i class="fa fa-user-cog me-2"></i>Profile Settings
                     </a>
                 </li>
             <?php elseif ($role === 'teacher'): ?>
+                <li class="nav-item">
+                    <a class="nav-link <?php if($activePage=='dashboard') echo 'active'; ?>" href="index.php">
+                        <i class="fa fa-home me-2"></i>Dashboard
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link <?php if($activePage=='notifications') echo 'active'; ?>" href="notifications.php">
+                        <i class="fa fa-bell me-2"></i>Notifications
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link <?php if($activePage=='queue-schedule') echo 'active'; ?>" href="queue-schedule.php">
+                        <i class="fa fa-calendar-alt me-2"></i>Upcoming Meetings
+                    </a>
+                </li>
                 <li class="nav-item">
                     <a class="nav-link <?php if($activePage=='create-room') echo 'active'; ?>" href="create-room.php">
                         <i class="fa fa-plus me-2"></i>Create Room
@@ -70,14 +85,12 @@ function renderSidebar($role, $activePage, $user) {
                 </li>
                 <li class="nav-item">
                     <a class="nav-link <?php if($activePage=='stats') echo 'active'; ?>" href="stats.php">
-                        <i class="fa fa-chart-bar me-2"></i>Stats
+                        <i class="fa fa-chart-bar me-2"></i>Statistics
                     </a>
                 </li>
-            <?php endif; ?>
-            <?php if ($role === 'admin'): ?>
                 <li class="nav-item">
-                    <a class="nav-link <?php if($activePage=='admin') echo 'active'; ?>" href="admin.php">
-                        <i class="fa fa-cog me-2"></i>Admin Panel
+                    <a class="nav-link <?php if($activePage=='profile') echo 'active'; ?>" href="profile.php">
+                        <i class="fa fa-user-cog me-2"></i>Profile Settings
                     </a>
                 </li>
             <?php endif; ?>

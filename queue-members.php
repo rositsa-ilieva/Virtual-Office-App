@@ -269,9 +269,6 @@ ob_start();
 <h2>Queue: <?php echo htmlspecialchars($queue['purpose']); ?></h2>
 <div class="mb-4">
     <strong>Your Position:</strong> <?php echo $current_user_position; ?>
-    <?php if (!empty($queue['meeting_link'])): ?>
-        <span class="ms-3"><a href="<?php echo htmlspecialchars($queue['meeting_link']); ?>" target="_blank" class="btn btn-success btn-sm">Open Meeting Link</a></span>
-    <?php endif; ?>
 </div>
 
 <?php

@@ -11,7 +11,7 @@ $user = $stmt->fetch();
 
 ob_start();
 ?>
-<h2>History / Past Meetings</h2>
+<h2>Past Meetings</h2>
 <div class="mt-4">
     <div class="row g-4">
         <?php
