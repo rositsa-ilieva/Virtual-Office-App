@@ -131,42 +131,36 @@ ob_start();
         <?php else:
             foreach ($notifications as $notification): ?>
                 <div class="col-12">
-                    <div class="card shadow-sm">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between align-items-start">
-                                <div>
-                                    <h5 class="card-title">
-                                        <?php echo htmlspecialchars($notification['type']); ?>
-                                    </h5>
-                                    <p class="card-text">
-                                        <?php echo htmlspecialchars($notification['message']); ?>
-                                    </p>
-                                    <?php if ($notification['queue_purpose']): ?>
-                                        <p class="text-muted">
-                                            Queue: <?php echo htmlspecialchars($notification['queue_purpose']); ?>
-                                        </p>
-                                    <?php endif; ?>
-                                    <?php if ($notification['type'] === 'swap_request' && !$notification['is_read']): ?>
-                                        <form method="POST" class="d-inline">
-                                            <input type="hidden" name="notification_id" value="<?php echo $notification['id']; ?>">
-                                            <input type="hidden" name="from_user_id" value="<?php echo $notification['related_user_id']; ?>">
-                                            <input type="hidden" name="queue_id" value="<?php echo $notification['related_queue_id']; ?>">
-                                            <button type="submit" name="action" value="approve_swap" class="btn btn-success btn-sm">Approve</button>
-                                            <button type="submit" name="action" value="decline_swap" class="btn btn-danger btn-sm">Decline</button>
-                                        </form>
-                                    <?php elseif ($notification['type'] === 'swap_request' && $notification['is_read']): ?>
-                                        <span class="badge bg-secondary">Handled</span>
-                                    <?php endif; ?>
-                                    <?php if ($notification['sender_name']): ?>
-                                        <p class="text-muted">
-                                            From: <?php echo htmlspecialchars($notification['sender_name']); ?>
-                                        </p>
-                                    <?php endif; ?>
-                                </div>
-                                <small class="text-muted">
-                                    <?php echo date('M d, Y g:i A', strtotime($notification['created_at'])); ?>
-                                </small>
+                    <div class="notification-card">
+                        <div class="notification-header">
+                            <div class="notification-title">
+                                <span class="notification-icon"><i class="fa fa-bell"></i></span>
+                                <?php echo htmlspecialchars($notification['type']); ?>
                             </div>
+                            <div class="notification-timestamp">
+                                <?php echo date('M d, Y g:i A', strtotime($notification['created_at'])); ?>
+                            </div>
+                        </div>
+                        <div class="notification-body">
+                            <?php echo htmlspecialchars($notification['message']); ?>
+                        </div>
+                        <div class="notification-actions">
+                            <?php if ($notification['type'] === 'swap_request' && !$notification['is_read']): ?>
+                                <form method="POST" class="d-inline">
+                                    <input type="hidden" name="notification_id" value="<?php echo $notification['id']; ?>">
+                                    <input type="hidden" name="from_user_id" value="<?php echo $notification['related_user_id']; ?>">
+                                    <input type="hidden" name="queue_id" value="<?php echo $notification['related_queue_id']; ?>">
+                                    <button type="submit" name="action" value="approve_swap" class="btn btn-success btn-sm">Approve</button>
+                                    <button type="submit" name="action" value="decline_swap" class="btn btn-danger btn-sm">Decline</button>
+                                </form>
+                            <?php elseif ($notification['type'] === 'swap_request' && $notification['is_read']): ?>
+                                <span class="badge bg-secondary">Handled</span>
+                            <?php endif; ?>
+                            <?php if ($notification['sender_name']): ?>
+                                <p class="text-muted">
+                                    From: <?php echo htmlspecialchars($notification['sender_name']); ?>
+                                </p>
+                            <?php endif; ?>
                         </div>
                     </div>
                 </div>
@@ -183,22 +177,34 @@ ob_start();
             foreach ($student_messages as $msg): ?>
                 <div class="col-12">
                     <div class="notification-card">
-                        <strong>Message from <?php echo htmlspecialchars($msg['student_name']); ?>:</strong><br>
-                        <span><?php echo htmlspecialchars($msg['message']); ?></span><br>
-                        <?php if (!$msg['is_read']): ?>
-                            <form method="POST" style="display:inline;">
-                                <input type="hidden" name="mark_read" value="<?php echo $msg['id']; ?>">
-                                <button type="submit" class="btn btn-success btn-sm">Mark as Read</button>
+                        <div class="notification-header">
+                            <div class="notification-title">
+                                <span class="notification-icon"><i class="fa fa-bell"></i></span>
+                                <strong>Message from <?php echo htmlspecialchars($msg['student_name']); ?>:</strong>
+                            </div>
+                            <div class="notification-timestamp">
+                                <?php echo date('M d, Y g:i A', strtotime($msg['created_at'])); ?>
+                            </div>
+                        </div>
+                        <div class="notification-body">
+                            <span><?php echo htmlspecialchars($msg['message']); ?></span>
+                        </div>
+                        <div class="notification-actions">
+                            <?php if (!$msg['is_read']): ?>
+                                <form method="POST" style="display:inline;">
+                                    <input type="hidden" name="mark_read" value="<?php echo $msg['id']; ?>">
+                                    <button type="submit" class="btn btn-success btn-sm">Mark as Read</button>
+                                </form>
+                            <?php else: ?>
+                                <span class="badge bg-secondary">Read</span>
+                            <?php endif; ?>
+                            <form method="POST" style="margin-top:8px;">
+                                <input type="hidden" name="reply_to" value="<?php echo $msg['related_user_id']; ?>">
+                                <input type="hidden" name="queue_id" value="<?php echo $msg['related_queue_id']; ?>">
+                                <textarea name="reply_message" class="form-control mb-2" rows="2" placeholder="Reply..."></textarea>
+                                <button type="submit" class="btn btn-primary btn-sm">Reply</button>
                             </form>
-                        <?php else: ?>
-                            <span class="badge bg-secondary">Read</span>
-                        <?php endif; ?>
-                        <form method="POST" style="margin-top:8px;">
-                            <input type="hidden" name="reply_to" value="<?php echo $msg['related_user_id']; ?>">
-                            <input type="hidden" name="queue_id" value="<?php echo $msg['related_queue_id']; ?>">
-                            <textarea name="reply_message" class="form-control mb-2" rows="2" placeholder="Reply..."></textarea>
-                            <button type="submit" class="btn btn-primary btn-sm">Reply</button>
-                        </form>
+                        </div>
                     </div>
                 </div>
             <?php endforeach; ?>
@@ -244,6 +250,61 @@ document.querySelectorAll('.reply-form').forEach(form => {
     });
 });
 </script>
+<style>
+.notification-card {
+    background: linear-gradient(120deg, #f8fafc 60%, #e0e7ff 100%);
+    border-radius: 18px;
+    box-shadow: 0 4px 24px rgba(99,102,241,0.10), 0 1.5px 6px rgba(99,102,241,0.08);
+    padding: 1.5rem 1.4rem 1.2rem 1.4rem;
+    margin-bottom: 1.5rem;
+    position: relative;
+    transition: box-shadow 0.18s, transform 0.18s;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+.notification-card:hover {
+    box-shadow: 0 8px 32px rgba(99,102,241,0.16), 0 2px 12px rgba(99,102,241,0.10);
+    transform: translateY(-2px) scale(1.015);
+}
+.notification-icon {
+    font-size: 1.3rem;
+    color: #6366f1;
+    margin-right: 0.7rem;
+    vertical-align: middle;
+}
+.notification-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 0.7rem;
+}
+.notification-title {
+    font-size: 1.08rem;
+    font-weight: 600;
+    color: #1e293b;
+    display: flex;
+    align-items: center;
+}
+.notification-timestamp {
+    font-size: 0.98rem;
+    color: #64748b;
+    font-weight: 400;
+    margin-left: 1.2rem;
+    white-space: nowrap;
+}
+.notification-body {
+    font-size: 1.04rem;
+    color: #334155;
+    margin-bottom: 0.7rem;
+}
+.notification-actions {
+    margin-top: 0.7rem;
+    display: flex;
+    gap: 0.7rem;
+    flex-wrap: wrap;
+}
+</style>
 <?php
 $content = ob_get_clean();
 require 'layout.php';

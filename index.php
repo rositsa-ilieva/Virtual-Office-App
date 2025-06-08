@@ -235,21 +235,155 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mark_all_read'])) {
     <div class="main-content">
         <h1 class="mb-4">Welcome, <?php echo htmlspecialchars($user['name'] ?? $user['email']); ?>!</h1>
         <?php if ($user_role === 'student'): ?>
-            <div class="row g-4">
-                <div class="col-md-6">
-                    <div class="card p-4 shadow-sm">
-                        <h5>My Queues</h5>
-                        <p>View and manage your current queues.</p>
-                        <a href="my-queues.php" class="btn btn-primary">Go to My Queues</a>
-                    </div>
+            <style>
+                body {
+                    background: linear-gradient(135deg, #e0e7ff 0%, #f8fafc 100%);
+                    min-height: 100vh;
+                    font-family: 'Segoe UI', 'Roboto', Arial, sans-serif;
+                }
+                .student-dashboard-main {
+                    min-height: 100vh;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: flex-start;
+                    padding: 3rem 0 2rem 0;
+                }
+                .student-dashboard-profile {
+                    display: flex;
+                    align-items: center;
+                    gap: 1.2rem;
+                    margin-bottom: 2.2rem;
+                }
+                .student-dashboard-avatar {
+                    width: 64px;
+                    height: 64px;
+                    border-radius: 50%;
+                    background: linear-gradient(135deg, #6366f1 60%, #a5b4fc 100%);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-size: 2.2rem;
+                    color: #fff;
+                    box-shadow: 0 2px 12px rgba(99,102,241,0.13);
+                }
+                .student-dashboard-profile-info {
+                    display: flex;
+                    flex-direction: column;
+                }
+                .student-dashboard-welcome {
+                    font-size: 1.45rem;
+                    font-weight: 700;
+                    color: #1e293b;
+                }
+                .student-dashboard-section-title {
+                    font-size: 1.25rem;
+                    font-weight: 600;
+                    color: #334155;
+                    margin-bottom: 1.2rem;
+                    margin-top: 0.5rem;
+                    letter-spacing: 0.01em;
+                    text-align: center;
+                }
+                .student-dashboard-cards {
+                    display: grid;
+                    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+                    gap: 2.2rem;
+                    width: 100%;
+                    max-width: 980px;
+                    margin-bottom: 2.5rem;
+                }
+                .student-dashboard-card {
+                    background: linear-gradient(120deg, #f8fafc 60%, #e0e7ff 100%);
+                    border-radius: 20px;
+                    box-shadow: 0 8px 32px rgba(30,41,59,0.13), 0 1.5px 6px rgba(99,102,241,0.08);
+                    padding: 2.2rem 1.7rem 1.7rem 1.7rem;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    text-align: center;
+                    transition: box-shadow 0.22s, transform 0.22s;
+                    position: relative;
+                }
+                .student-dashboard-card:hover {
+                    box-shadow: 0 12px 40px rgba(99,102,241,0.18), 0 2px 12px rgba(99,102,241,0.10);
+                    transform: translateY(-4px) scale(1.025);
+                }
+                .student-dashboard-card .student-dashboard-icon {
+                    font-size: 2.3rem;
+                    color: #6366f1;
+                    margin-bottom: 1.1rem;
+                    transition: color 0.18s, transform 0.18s;
+                }
+                .student-dashboard-card:hover .student-dashboard-icon {
+                    color: #2563eb;
+                    transform: scale(1.12) rotate(-6deg);
+                }
+                .student-dashboard-action-title {
+                    font-size: 1.18rem;
+                    font-weight: 600;
+                    margin-bottom: 0.3rem;
+                    color: #1e293b;
+                }
+                .student-dashboard-action-desc {
+                    color: #64748b;
+                    font-size: 1.04rem;
+                    margin-bottom: 1.2rem;
+                }
+                .btn-primary {
+                    width: 100%;
+                    padding: 0.8rem 0;
+                    border: none;
+                    border-radius: 14px;
+                    background: linear-gradient(90deg, #6366f1 0%, #2563eb 100%);
+                    color: #fff;
+                    font-size: 1.1rem;
+                    font-weight: 600;
+                    box-shadow: 0 2px 8px rgba(99,102,241,0.08);
+                    transition: background 0.2s, transform 0.15s, box-shadow 0.18s;
+                    cursor: pointer;
+                }
+                .btn-primary:hover, .btn-primary:focus {
+                    background: linear-gradient(90deg, #2563eb 0%, #6366f1 100%);
+                    transform: translateY(-2px) scale(1.03);
+                    box-shadow: 0 4px 16px rgba(99,102,241,0.13);
+                }
+                @media (max-width: 900px) {
+                    .student-dashboard-cards { grid-template-columns: 1fr; }
+                }
+                @media (max-width: 600px) {
+                    .student-dashboard-main { padding: 1.2rem 0.2rem; }
+                    .student-dashboard-cards { gap: 1.2rem; }
+                }
+            </style>
+            <div class="student-dashboard-main">
+              <div class="student-dashboard-profile">
+                <div class="student-dashboard-avatar"><i class="fa fa-user-graduate"></i></div>
+                <div class="student-dashboard-profile-info">
+                  <div class="student-dashboard-welcome">Welcome, <?php echo htmlspecialchars($user['name'] ?? $user['email']); ?>!</div>
                 </div>
-                <div class="col-md-6">
-                    <div class="card p-4 shadow-sm">
-                        <h5>Upcoming Meetings</h5>
-                        <p>See your upcoming meetings.</p>
-                        <a href="queue-schedule.php" class="btn btn-primary">View Meetings</a>
-                    </div>
+              </div>
+              <div class="student-dashboard-section-title">Quick Actions</div>
+              <div class="student-dashboard-cards">
+                <div class="student-dashboard-card">
+                  <div class="student-dashboard-icon"><i class="fa fa-list"></i></div>
+                  <div class="student-dashboard-action-title">My Queues</div>
+                  <div class="student-dashboard-action-desc">View and manage your queues.</div>
+                  <a href="my-queues.php" class="btn-primary">Go to My Queues</a>
                 </div>
+                <div class="student-dashboard-card">
+                  <div class="student-dashboard-icon"><i class="fa fa-calendar-alt"></i></div>
+                  <div class="student-dashboard-action-title">Upcoming Meetings</div>
+                  <div class="student-dashboard-action-desc">See your upcoming appointments.</div>
+                  <a href="queue-schedule.php" class="btn-primary">View Meetings</a>
+                </div>
+                <div class="student-dashboard-card">
+                  <div class="student-dashboard-icon"><i class="fa fa-history"></i></div>
+                  <div class="student-dashboard-action-title">Past Meetings</div>
+                  <div class="student-dashboard-action-desc">Review completed meetings.</div>
+                  <a href="history.php" class="btn-primary">View History</a>
+                </div>
+              </div>
             </div>
         <?php elseif ($user_role === 'teacher'): ?>
             <style>
