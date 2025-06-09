@@ -11,8 +11,8 @@ if ($user_id) {
 }
 $activePage = $activePage ?? '';
 ?>
-<nav class="sidebar d-flex flex-column" style="background:#192132;min-width:260px;max-width:260px;">
-  <div class="sidebar-header" style="font-size:2rem;font-weight:800;letter-spacing:0.5px;padding:2rem 1.5rem 1.2rem 1.5rem;background:#192132;color:#fff;border-bottom:1px solid #232b3e;">
+<nav class="sidebar d-flex flex-column" style="background:#192132;min-width:240px;max-width:260px;box-shadow:2px 0 16px rgba(40,83,107,0.07);">
+  <div class="sidebar-header" style="font-size:1.7rem;font-weight:800;letter-spacing:0.5px;padding:2rem 1.5rem 1.2rem 1.5rem;background:#192132;color:#fff;border-bottom:1px solid #232b3e;text-align:left;">
     <i class="fas fa-user-graduate me-2"></i> Virtual Office
     <div class="small mt-2" style="font-size:1rem;font-weight:400;">
       <?php echo htmlspecialchars($user['name'] ?? $user['email'] ?? ''); ?>
@@ -71,22 +71,75 @@ $activePage = $activePage ?? '';
   </ul>
 </nav>
 <style>
+.sidebar {
+  background: #192132;
+  min-width: 240px;
+  max-width: 260px;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  box-shadow: 2px 0 16px rgba(40,83,107,0.07);
+}
+.sidebar-header {
+  font-size: 1.7rem;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  padding: 2rem 1.5rem 1.2rem 1.5rem;
+  background: #192132;
+  color: #fff;
+  border-bottom: 1px solid #232b3e;
+  text-align: left;
+}
+.sidebar .nav {
+  flex: 1 1 auto;
+  padding: 0 0 24px 0;
+}
+.sidebar .nav-item {
+  margin-bottom: 14px;
+}
+.sidebar .nav-item:last-child {
+  margin-bottom: 0;
+}
 .sidebar .nav-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 1.07rem;
+  padding: 12px 18px 12px 24px;
   color: #fff;
   background: none;
   border-radius: 12px;
-  margin-bottom: 6px;
   font-weight: 500;
   transition: background 0.2s, color 0.2s;
+  margin-bottom: 0;
+  position: relative;
+  text-align: left;
+}
+.sidebar .nav-link .fa, .sidebar .nav-link .fas {
+  font-size: 1.18em;
+  min-width: 22px;
+  text-align: left;
 }
 .sidebar .nav-link.active, .sidebar .nav-link:hover {
   background: #2563eb;
   color: #fff;
+  font-weight: 700;
 }
-.sidebar .nav-link .badge {
-  margin-left: auto;
+.sidebar .nav-link.active {
+  box-shadow: 0 2px 12px rgba(37,99,235,0.08);
 }
-.sidebar .sidebar-header {
-  font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
+.sidebar .nav-link.text-danger {
+  color: #ef4444 !important;
+  background: none;
+}
+.sidebar .nav-link.text-danger:hover {
+  background: #f87171 !important;
+  color: #fff !important;
+}
+.sidebar .sidebar-header .small {
+  font-size: 1rem;
+  font-weight: 400;
+  color: #b0b8c1;
+  margin-top: 0.5rem;
 }
 </style> 

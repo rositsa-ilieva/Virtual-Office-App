@@ -37,17 +37,28 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 $show_start_form = $entry_id;
                 break;
             case 'start':
-                $stmt = $pdo->prepare('UPDATE queue_entries SET status = "in_meeting", started_at = NOW() WHERE id = ? AND queue_id = ?');
-                $stmt->execute([$entry_id, $queue_id]);
+                // Find the student with position 1 and status 'waiting'
+                $stmt = $pdo->prepare('SELECT id FROM queue_entries WHERE queue_id = ? AND position = 1 AND status = "waiting" ORDER BY joined_at ASC LIMIT 1');
+                $stmt->execute([$queue_id]);
+                $first = $stmt->fetch();
+                if ($first) {
+                    // Set this student to in_meeting and position 0
+                    $stmt = $pdo->prepare('UPDATE queue_entries SET status = "in_meeting", started_at = NOW(), position = 0 WHERE id = ? AND queue_id = ?');
+                    $stmt->execute([$first['id'], $queue_id]);
+                    // Shift all other waiting students up
+                    $pdo->exec('SET @pos = 1;');
+                    $stmt = $pdo->prepare('UPDATE queue_entries SET position = (@pos:=@pos+1) WHERE queue_id = ? AND status = "waiting" ORDER BY position');
+                    $stmt->execute([$queue_id]);
+                }
                 $custom_start_time_for_estimation = date('Y-m-d H:i:s');
-                // Do NOT shift/reorder positions here!
                 break;
             case 'end':
-                $stmt = $pdo->prepare('UPDATE queue_entries SET status = "done", ended_at = NOW() WHERE id = ? AND queue_id = ?');
-                $stmt->execute([$entry_id, $queue_id]);
-                // After ending, update positions for all waiting students
-                $pdo->exec('SET @pos = 0;');
-                $stmt = $pdo->prepare('UPDATE queue_entries SET position = (@pos:=@pos+1) WHERE queue_id = ? AND status = "waiting" ORDER BY joined_at ASC;');
+                // Remove the in_meeting student (position 0)
+                $stmt = $pdo->prepare('DELETE FROM queue_entries WHERE queue_id = ? AND position = 0 AND status = "in_meeting"');
+                $stmt->execute([$queue_id]);
+                // Shift all waiting students up (1->0, 2->1, ...)
+                $pdo->exec('SET @pos = -1;');
+                $stmt = $pdo->prepare('UPDATE queue_entries SET position = (@pos:=@pos+1) WHERE queue_id = ? AND status = "waiting" ORDER BY position');
                 $stmt->execute([$queue_id]);
                 break;
             case 'skip':
@@ -55,7 +66,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 $stmt->execute([$entry_id, $queue_id]);
                 // After skipping, update positions for all waiting students
                 $pdo->exec('SET @pos = 0;');
-                $stmt = $pdo->prepare('UPDATE queue_entries SET position = (@pos:=@pos+1) WHERE queue_id = ? AND status = "waiting" ORDER BY joined_at ASC;');
+                $stmt = $pdo->prepare('UPDATE queue_entries SET position = (@pos:=@pos+1) WHERE queue_id = ? AND status = "waiting" ORDER BY position');
                 $stmt->execute([$queue_id]);
                 break;
             case 'remove':
@@ -63,7 +74,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 $stmt->execute([$entry_id, $queue_id]);
                 // After removal, update positions for all waiting students
                 $pdo->exec('SET @pos = 0;');
-                $stmt = $pdo->prepare('UPDATE queue_entries SET position = (@pos:=@pos+1) WHERE queue_id = ? AND status = "waiting" ORDER BY joined_at ASC;');
+                $stmt = $pdo->prepare('UPDATE queue_entries SET position = (@pos:=@pos+1) WHERE queue_id = ? AND status = "waiting" ORDER BY position');
                 $stmt->execute([$queue_id]);
                 break;
         }
@@ -159,7 +170,7 @@ unset($entry);
             <h1>Manage Queue: <?php echo htmlspecialchars($queue['purpose']); ?></h1>
             <div class="nav-links">
                 <a href="statistics.php?id=<?php echo $queue_id; ?>" class="btn btn-secondary">View Statistics</a>
-                <a href="index.php" class="btn btn-secondary">Dashboard</a>
+                <a href="my-queues.php" class="btn" style="background:#e0e7ff;color:#6366f1;font-size:1.18rem;font-weight:700;padding:0.85em 2.2em;border-radius:18px;box-shadow:none;">Back to My Queues</a>
                 <a href="logout.php" class="btn btn-danger">Logout</a>
             </div>
         </nav>

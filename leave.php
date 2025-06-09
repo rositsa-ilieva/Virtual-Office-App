@@ -23,7 +23,12 @@ if (!$entry) {
     exit;
 }
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+// Prevent leaving if in_meeting
+if ($entry['status'] === 'in_meeting') {
+    $error = 'You cannot leave the queue while in a meeting. Please wait for the teacher to end the session.';
+}
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && $entry['status'] !== 'in_meeting') {
     try {
         // Delete the queue entry
         $sql = "DELETE FROM queue_entries WHERE id = ?";
@@ -81,6 +86,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <?php endif; ?>
             </div>
 
+            <?php if ($entry['status'] === 'in_meeting'): ?>
+                <div class="alert alert-warning">You cannot leave the queue while in a meeting. Please wait for the teacher to end the session.</div>
+            <?php else: ?>
             <form method="POST" action="">
                 <p class="warning">Are you sure you want to leave this queue? This action cannot be undone.</p>
                 <div class="form-actions">
@@ -88,6 +96,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <a href="index.php" class="button secondary">Cancel</a>
                 </div>
             </form>
+            <?php endif; ?>
         </div>
     </div>
 </body>

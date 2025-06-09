@@ -136,26 +136,197 @@ document.addEventListener('DOMContentLoaded', function() {
             disableSwapButtons(form, action === 'approve_swap' ? 'approved' : 'declined');
         });
     });
+    document.querySelectorAll('.notification-delete-btn').forEach(function(btn) {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            var card = btn.closest('.notification-card');
+            var notificationId = card.getAttribute('data-id');
+            // Fade out
+            card.style.transition = 'opacity 0.3s ease';
+            card.style.opacity = '0';
+            // AJAX delete
+            fetch('delete-notification.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: 'id=' + encodeURIComponent(notificationId)
+            }).then(function(res) {
+                setTimeout(function() { card.remove(); }, 300);
+            });
+        });
+    });
 });
 </script>
-<h2>Notifications</h2>
+<style>
+.notifications-container {
+    max-width: 700px;
+    margin: 0 auto;
+    padding: 2rem 0;
+}
+.notifications-group-title {
+    font-size: 1.08rem;
+    font-weight: 700;
+    color: #6366f1;
+    margin: 2.2rem 0 1.1rem 0;
+    letter-spacing: 0.01em;
+}
+.notification-card {
+    background: linear-gradient(120deg, #f8fafc 60%, #e0e7ff 100%);
+    border-radius: 18px;
+    box-shadow: 0 4px 24px rgba(99,102,241,0.10), 0 1.5px 6px rgba(99,102,241,0.08);
+    padding: 1.5rem 1.7rem 1.2rem 1.7rem;
+    margin-bottom: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.7rem;
+    position: relative;
+    transition: box-shadow 0.18s, transform 0.18s;
+    min-height: 120px;
+}
+.notification-card:hover {
+    box-shadow: 0 8px 32px rgba(99,102,241,0.18), 0 2px 12px rgba(99,102,241,0.10);
+    transform: translateY(-2px) scale(1.01);
+}
+.notification-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 0.2rem;
+}
+.notification-title {
+    font-size: 1.13rem;
+    font-weight: 700;
+    color: #1e293b;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+.notification-icon {
+    font-size: 1.3rem;
+    margin-right: 0.4rem;
+}
+.notification-body {
+    font-size: 1.05rem;
+    color: #334155;
+    margin-bottom: 0.3rem;
+    line-height: 1.6;
+}
+.notification-details {
+    font-size: 0.98rem;
+    color: #6366f1;
+    margin-bottom: 0.2rem;
+    font-weight: 500;
+}
+.notification-timestamp {
+    font-size: 0.97rem;
+    color: #64748b;
+    font-weight: 400;
+    margin-left: 0;
+    margin-top: 0.7rem;
+    white-space: nowrap;
+    position: absolute;
+    right: 1.7rem;
+    bottom: 1.1rem;
+    background: rgba(255,255,255,0.7);
+    padding: 2px 10px;
+    border-radius: 8px;
+}
+.notification-actions {
+    margin-top: 0.5rem;
+    display: flex;
+    gap: 0.7rem;
+    align-items: center;
+}
+.notification-badge {
+    display: inline-block;
+    background: #e0e7ff;
+    color: #6366f1;
+    font-size: 0.93rem;
+    font-weight: 600;
+    border-radius: 8px;
+    padding: 3px 12px;
+    margin-left: 0.5rem;
+}
+.notification-delete-btn {
+    position: absolute;
+    top: 14px;
+    right: 18px;
+    background: none;
+    border: none;
+    color: #64748b;
+    font-size: 1.2rem;
+    cursor: pointer;
+    padding: 2px 6px;
+    border-radius: 50%;
+    transition: background 0.15s;
+    z-index: 2;
+}
+.notification-delete-btn:hover {
+    background: #e0e7ff;
+    color: #ef4444;
+}
+@media (max-width: 600px) {
+    .notifications-container { padding: 0.7rem 0; }
+    .notification-card { padding: 1.1rem 0.6rem; }
+    .notification-timestamp { right: 0.6rem; left: auto; bottom: 0.7rem; }
+}
+</style>
+<div class="notifications-container">
+<h2 style="text-align:center;font-weight:700;color:#1e293b;margin-bottom:2rem;">Notifications</h2>
 <div class="mt-4">
     <div class="row g-4">
         <?php
         // Get notifications (use correct columns)
         $sql = "SELECT n.*, 
                        q.purpose as queue_purpose,
+                       q.start_time as queue_start_time,
                        u.name as sender_name
                 FROM notifications n
                 LEFT JOIN queues q ON n.related_queue_id = q.id
                 LEFT JOIN users u ON n.related_user_id = u.id
                 WHERE n.user_id = ?
                 ORDER BY n.created_at DESC
-                LIMIT 20";
+                LIMIT 50";
         $stmt = $pdo->prepare($sql);
         $stmt->execute([$user_id]);
         $notifications = $stmt->fetchAll();
 
+        // Helper: icon for type
+        function notificationTypeIcon($type) {
+            switch ($type) {
+                case 'swap_request': return '<span title="Swap Request" style="color:#f59e42;">&#x1F501;</span>';
+                case 'swap_approved': return '<span title="Swap Approved" style="color:#10b981;">&#x2705;</span>';
+                case 'swap_declined': return '<span title="Swap Declined" style="color:#ef4444;">&#x26A0;&#xFE0F;</span>';
+                case 'teacher_reply': return '<span title="Teacher Reply" style="color:#6366f1;">&#x1F4AC;</span>';
+                case 'student_message': return '<span title="Student Message" style="color:#2563eb;">&#x1F4E8;</span>';
+                default: return '<span title="Notification" style="color:#6366f1;"><i class="fa fa-bell"></i></span>';
+            }
+        }
+        // Helper: context message
+        function notificationContext($type) {
+            switch ($type) {
+                case 'swap_request': return 'Position swap requested';
+                case 'swap_approved': return 'Your swap request was approved';
+                case 'swap_declined': return 'Your swap request was declined';
+                case 'teacher_reply': return 'Reply from teacher';
+                case 'student_message': return 'Message from student';
+                default: return 'Notification';
+            }
+        }
+        // Helper: group by date
+        function groupNotificationsByDate($notifications) {
+            $groups = [];
+            foreach ($notifications as $n) {
+                $date = date('Y-m-d', strtotime($n['created_at']));
+                $today = date('Y-m-d');
+                $yesterday = date('Y-m-d', strtotime('-1 day'));
+                if ($date === $today) $label = 'Today';
+                elseif ($date === $yesterday) $label = 'Yesterday';
+                else $label = date('F j, Y', strtotime($n['created_at']));
+                $groups[$label][] = $n;
+            }
+            return $groups;
+        }
+        $grouped = groupNotificationsByDate($notifications);
         if (empty($notifications)): ?>
             <div class="col-12">
                 <div class="alert alert-info">
@@ -163,20 +334,32 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
             </div>
         <?php else:
-            foreach ($notifications as $notification): ?>
+            foreach ($grouped as $groupLabel => $groupList): ?>
+                <div class="notifications-group-title"><?php echo htmlspecialchars($groupLabel); ?></div>
+                <?php foreach ($groupList as $notification): ?>
                 <div class="col-12">
-                    <div class="notification-card">
+                    <div class="notification-card" data-id="<?php echo $notification['id']; ?>">
+                        <form method="POST" style="position:absolute;top:0;right:0;z-index:2;">
+                            <input type="hidden" name="delete_notification" value="<?php echo $notification['id']; ?>">
+                            <button type="submit" class="notification-delete-btn" title="Delete notification">&times;</button>
+                        </form>
                         <div class="notification-header">
                             <div class="notification-title">
-                                <span class="notification-icon"><i class="fa fa-bell"></i></span>
-                                <?php echo htmlspecialchars($notification['type']); ?>
-                            </div>
-                            <div class="notification-timestamp">
-                                <?php echo date('M d, Y g:i A', strtotime($notification['created_at'])); ?>
+                                <span class="notification-icon"><?php echo notificationTypeIcon($notification['type']); ?></span>
+                                <?php echo notificationContext($notification['type']); ?>
+                                <?php if (!$notification['is_read']): ?><span class="notification-badge">New</span><?php endif; ?>
                             </div>
                         </div>
+                        <?php if ($notification['queue_purpose']): ?>
+                        <div class="notification-details">
+                            <i class="fa fa-layer-group"></i> <b><?php echo htmlspecialchars($notification['queue_purpose']); ?></b>
+                            <?php if ($notification['queue_start_time']): ?>
+                                <span style="margin-left:1.1em;"><i class="fa fa-clock"></i> <?php echo date('M d, g:i A', strtotime($notification['queue_start_time'])); ?></span>
+                            <?php endif; ?>
+                        </div>
+                        <?php endif; ?>
                         <div class="notification-body">
-                            <?php echo htmlspecialchars($notification['message']); ?>
+                            <?php echo nl2br(htmlspecialchars($notification['message'])); ?>
                         </div>
                         <div class="notification-actions">
                             <?php if ($notification['type'] === 'swap_request' && !$notification['is_read']): ?>
@@ -191,16 +374,19 @@ document.addEventListener('DOMContentLoaded', function() {
                                 <span class="badge bg-secondary">Handled</span>
                             <?php endif; ?>
                             <?php if ($notification['sender_name']): ?>
-                                <p class="text-muted">
-                                    From: <?php echo htmlspecialchars($notification['sender_name']); ?>
-                                </p>
+                                <span class="text-muted" style="margin-left:0.7em;font-size:0.97em;">From: <?php echo htmlspecialchars($notification['sender_name']); ?></span>
                             <?php endif; ?>
+                        </div>
+                        <div class="notification-timestamp">
+                            <?php echo date('g:i A', strtotime($notification['created_at'])); ?>
                         </div>
                     </div>
                 </div>
+                <?php endforeach; ?>
             <?php endforeach;
         endif; ?>
     </div>
+</div>
 </div>
 
 <?php if ($user_role === 'teacher'): ?>
@@ -245,62 +431,8 @@ document.addEventListener('DOMContentLoaded', function() {
         </div>
     </div>
 <?php endif; ?>
-<style>
-.notification-card {
-    background: linear-gradient(120deg, #f8fafc 60%, #e0e7ff 100%);
-    border-radius: 18px;
-    box-shadow: 0 4px 24px rgba(99,102,241,0.10), 0 1.5px 6px rgba(99,102,241,0.08);
-    padding: 1.5rem 1.4rem 1.2rem 1.4rem;
-    margin-bottom: 1.5rem;
-    position: relative;
-    transition: box-shadow 0.18s, transform 0.18s;
-    display: flex;
-    flex-direction: column;
-    min-width: 0;
-}
-.notification-card:hover {
-    box-shadow: 0 8px 32px rgba(99,102,241,0.16), 0 2px 12px rgba(99,102,241,0.10);
-    transform: translateY(-2px) scale(1.015);
-}
-.notification-icon {
-    font-size: 1.3rem;
-    color: #6366f1;
-    margin-right: 0.7rem;
-    vertical-align: middle;
-}
-.notification-header {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    margin-bottom: 0.7rem;
-}
-.notification-title {
-    font-size: 1.08rem;
-    font-weight: 600;
-    color: #1e293b;
-    display: flex;
-    align-items: center;
-}
-.notification-timestamp {
-    font-size: 0.98rem;
-    color: #64748b;
-    font-weight: 400;
-    margin-left: 1.2rem;
-    white-space: nowrap;
-}
-.notification-body {
-    font-size: 1.04rem;
-    color: #334155;
-    margin-bottom: 0.7rem;
-}
-.notification-actions {
-    margin-top: 0.7rem;
-    display: flex;
-    gap: 0.7rem;
-    flex-wrap: wrap;
-}
-</style>
 <?php
 $content = ob_get_clean();
 require 'layout.php';
+?> 
 ?> 

@@ -113,9 +113,21 @@ ob_start();
     .myqueues-cards { gap: 1.2rem; }
     .myqueue-card { padding: 1.2rem 0.7rem; }
 }
+.cards-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 24px;
+  margin-bottom: 2.5rem;
+}
+@media (max-width: 900px) {
+  .cards-container { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 600px) {
+  .cards-container { grid-template-columns: 1fr; }
+}
 </style>
 <div class="myqueues-title"><i class="fa fa-list"></i> My Queues</div>
-<div class="myqueues-cards">
+<div class="cards-container">
 <?php
 // Get all queues where this student is currently waiting or in a meeting
 $sql = "SELECT q.id as queue_id, q.purpose, q.description, q.meeting_link, q.access_code, q.start_time, qe.position as my_position, qe.status, qe.estimated_start_time, u.name as teacher_name, u.email as teacher_email, u.subjects as teacher_subjects
@@ -138,7 +150,13 @@ if (empty($my_queues)) {
         echo '<div class="myqueue-card-title"><i class="fa fa-list"></i> ' . htmlspecialchars($queue['purpose']) . '</div>';
         echo '<div class="myqueue-card-meta"><i class="fa fa-chalkboard-teacher"></i> ' . htmlspecialchars($queue['teacher_name']) . '</div>';
         if (!empty($queue['start_time'])) {
-            echo '<div class="myqueue-card-meta"><i class="fa fa-calendar-alt"></i> ' . date('M d, Y g:i A', strtotime($queue['start_time'])) . '</div>';
+            echo '<div class="myqueue-card-meta"><i class="fa fa-clock"></i> ' . date('M d, Y', strtotime($queue['start_time'])) . ' &bull; ' . date('g:i A', strtotime($queue['start_time'])) . '</div>';
+        }
+        if (!empty($queue['meeting_link'])) {
+            echo '<div class="myqueue-card-meta"><i class="fa fa-link"></i> <a href="' . htmlspecialchars($queue['meeting_link']) . '" target="_blank" style="color:#2563eb;text-decoration:underline;word-break:break-all;">Meeting Link</a></div>';
+        }
+        if (!empty($queue['access_code'])) {
+            echo '<div class="myqueue-card-meta"><i class="fa fa-key"></i> Access Code: <span style="font-weight:600;letter-spacing:1px;">' . htmlspecialchars($queue['access_code']) . '</span></div>';
         }
         echo '<div class="myqueue-card-position"><i class="fa fa-list-ol"></i> Position: ' . htmlspecialchars($queue['my_position']) . '</div>';
         echo '<div class="myqueue-card-status ' . $statusClass . '">' . $statusIcon . ' ' . ucfirst(str_replace('_', ' ', $status)) . '</div>';
