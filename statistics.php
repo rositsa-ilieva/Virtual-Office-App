@@ -102,15 +102,15 @@ if ($counts) {
     
     // Calculate averages only if we have data
     if ($counts['completed_meetings'] > 0) {
-        $stats['average_meeting_duration'] = round($counts['total_meeting_duration'] / $counts['completed_meetings'] / 60, 1);
+        $stats['average_meeting_duration'] = (int) round($counts['total_meeting_duration'] / $counts['completed_meetings'] / 60, 1);
     } else {
-        $stats['average_meeting_duration'] = 0.0;
+        $stats['average_meeting_duration'] = 0;
     }
     
     if ($counts['meetings_with_wait_time'] > 0) {
-        $stats['average_wait_time'] = round($counts['total_wait_time'] / $counts['meetings_with_wait_time'] / 60, 1);
+        $stats['average_wait_time'] = (int) round($counts['total_wait_time'] / $counts['meetings_with_wait_time'] / 60, 1);
     } else {
-        $stats['average_wait_time'] = 0.0;
+        $stats['average_wait_time'] = 0;
     }
 }
 
@@ -124,9 +124,9 @@ $stmt->execute([$queue_id]);
 $max_wait = $stmt->fetch();
 
 if ($max_wait && $max_wait['max_wait_seconds'] !== null) {
-    $stats['max_wait_time'] = round($max_wait['max_wait_seconds'] / 60, 1);
+    $stats['max_wait_time'] = (int) round($max_wait['max_wait_seconds'] / 60, 1);
 } else {
-    $stats['max_wait_time'] = 0.0;
+    $stats['max_wait_time'] = 0;
 }
 
 // Get queue time info with precise calculations
@@ -179,14 +179,15 @@ function formatDuration($minutes) {
         return '0 minutes';
     }
     $totalMinutes = round((float)$minutes, 1);
-    $hours = round($totalMinutes / 60, 0);
-    $mins = round($totalMinutes % 60, 1);
+    $hours = (int)($totalMinutes / 60);
+    $mins = $totalMinutes % 60;
     $parts = [];
     if ($hours > 0) {
-        $parts[] = number_format($hours, 0) . ' hour' . ($hours > 1 ? 's' : '');
+        $parts[] = $hours . ' hour' . ($hours > 1 ? 's' : '');
     }
     if ($mins > 0) {
-        $parts[] = number_format($mins, 1) . ' minute' . ($mins > 1 ? 's' : '');
+        $mins_display = (abs($mins - (int)$mins) < 0.01) ? (int)$mins : round($mins, 1);
+        $parts[] = $mins_display . ' minute' . ($mins_display > 1 ? 's' : '');
     }
     return implode(' and ', $parts) ?: '0 minutes';
 }
@@ -198,55 +199,152 @@ function formatExactTime($timestamp) {
 
 ob_start();
 ?>
-<h2>Queue Statistics: <?php echo htmlspecialchars($queue['purpose']); ?></h2>
-<div class="row mt-4">
-    <div class="col-md-6">
-        <div class="card shadow-sm mb-4">
-            <div class="card-body">
-                <h5 class="card-title">Status Distribution</h5>
-                <ul class="list-group mb-3">
-                    <li class="list-group-item d-flex justify-content-between align-items-center">Waiting <span class="badge bg-warning text-dark"><?php echo $stats['status_counts']['waiting']; ?></span></li>
-                    <li class="list-group-item d-flex justify-content-between align-items-center">In Meeting <span class="badge bg-info text-dark"><?php echo $stats['status_counts']['in_meeting']; ?></span></li>
-                    <li class="list-group-item d-flex justify-content-between align-items-center">Completed <span class="badge bg-success"><?php echo $stats['status_counts']['done']; ?></span></li>
-                    <li class="list-group-item d-flex justify-content-between align-items-center">Skipped <span class="badge bg-danger"><?php echo $stats['status_counts']['skipped']; ?></span></li>
-                </ul>
-                <h5 class="card-title mt-4">Time Information</h5>
-                <ul class="list-group">
-                    <li class="list-group-item">Queue Start: <?php echo formatExactTime($stats['time_info']['queue_start']); ?></li>
-                    <li class="list-group-item">Queue End: <?php echo formatExactTime($stats['time_info']['queue_end']); ?></li>
-                    <li class="list-group-item">First Entry: <?php echo formatExactTime($stats['time_info']['first_entry']); ?></li>
-                    <li class="list-group-item">Last Entry: <?php echo formatExactTime($stats['time_info']['last_entry']); ?></li>
-                </ul>
-            </div>
+<style>
+.stats-title-page {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #1e293b;
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    margin-bottom: 2.2rem;
+    margin-left: 0.2rem;
+}
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+    gap: 2.2rem;
+    width: 100%;
+    margin: 0 auto 2.5rem auto;
+    max-width: 1100px;
+}
+.stats-card {
+    background: linear-gradient(120deg, #f8fafc 60%, #e0e7ff 100%);
+    border-radius: 22px;
+    box-shadow: 0 8px 40px rgba(30,41,59,0.13), 0 1.5px 6px rgba(99,102,241,0.08);
+    padding: 2.2rem 1.7rem 1.7rem 1.7rem;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    min-width: 0;
+}
+.stats-card h5 {
+    font-size: 1.18rem;
+    font-weight: 700;
+    color: #334155;
+    margin-bottom: 1.1rem;
+}
+.stats-badge {
+    display: inline-block;
+    padding: 0.3em 0.9em;
+    border-radius: 12px;
+    font-size: 0.98em;
+    font-weight: 600;
+    color: #fff;
+    margin-left: 0.5em;
+}
+.stats-badge-waiting { background: #6366f1; }
+.stats-badge-in_meeting { background: #2563eb; }
+.stats-badge-done { background: #10b981; }
+.stats-badge-skipped { background: #f59e42; }
+.stats-badge-other { background: #64748b; }
+.stats-pie-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.2rem;
+    margin-top: 1.2rem;
+    font-size: 1.05rem;
+    align-items: center;
+}
+.stats-pie-legend span {
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+}
+.stats-pie-legend .legend-dot {
+    width: 1.1em;
+    height: 1.1em;
+    border-radius: 50%;
+    display: inline-block;
+}
+@media (max-width: 700px) {
+    .stats-grid { grid-template-columns: 1fr; }
+}
+</style>
+<div class="stats-title-page"><i class="fa fa-chart-pie"></i>Statistics: <?php echo htmlspecialchars($queue['purpose']); ?></div>
+<div class="stats-grid">
+    <div class="stats-card">
+        <h5>Status Distribution</h5>
+        <div style="margin-bottom:1.2rem;">
+            <span>Waiting <span class="stats-badge stats-badge-waiting"><?php echo $stats['status_counts']['waiting']; ?></span></span><br>
+            <span>In Meeting <span class="stats-badge stats-badge-in_meeting"><?php echo $stats['status_counts']['in_meeting']; ?></span></span><br>
+            <span>Completed <span class="stats-badge stats-badge-done"><?php echo $stats['status_counts']['done']; ?></span></span><br>
+            <span>Skipped <span class="stats-badge stats-badge-skipped"><?php echo $stats['status_counts']['skipped']; ?></span></span>
+        </div>
+        <h5>Time Information</h5>
+        <div style="color:#64748b;font-size:1.05rem;">
+            <div>Queue Start: <?php echo formatExactTime($stats['time_info']['queue_start']); ?></div>
+            <div>Queue End: <?php echo formatExactTime($stats['time_info']['queue_end']); ?></div>
+            <div>First Entry: <?php echo formatExactTime($stats['time_info']['first_entry']); ?></div>
+            <div>Last Entry: <?php echo formatExactTime($stats['time_info']['last_entry']); ?></div>
         </div>
     </div>
-    <div class="col-md-6">
-        <div class="card shadow-sm mb-4">
-            <div class="card-body">
-                <h5 class="card-title">Averages</h5>
-                <ul class="list-group mb-3">
-                    <li class="list-group-item">Average Wait Time: <?php echo formatDuration($stats['average_wait_time']); ?></li>
-                    <li class="list-group-item">Average Meeting Duration: <?php echo formatDuration($stats['average_meeting_duration']); ?></li>
-                    <li class="list-group-item">Max Wait Time: <?php echo formatDuration($stats['max_wait_time']); ?></li>
-                </ul>
-                <h5 class="card-title mt-4">Total Entries</h5>
-                <span class="badge bg-primary" style="font-size:1.2em;"><?php echo $stats['total_entries']; ?></span>
-            </div>
+    <div class="stats-card">
+        <h5>Averages</h5>
+        <div style="color:#64748b;font-size:1.05rem;">
+            <div>Average Wait Time: <?php echo formatDuration($stats['average_wait_time']); ?></div>
+            <div>Average Meeting Duration: <?php echo formatDuration($stats['average_meeting_duration']); ?></div>
+            <div>Max Wait Time: <?php echo formatDuration($stats['max_wait_time']); ?></div>
+        </div>
+        <h5 style="margin-top:1.2rem;">Total Entries</h5>
+        <span class="stats-badge stats-badge-in_meeting" style="font-size:1.2em;background:#6366f1;"> <?php echo $stats['total_entries']; ?> </span>
+    </div>
+    <div class="stats-card" style="align-items:center;justify-content:center;min-width:260px;">
+        <h5 style="align-self:flex-start;">Meeting Status Breakdown</h5>
+        <canvas id="statusPieChart" width="180" height="180"></canvas>
+        <div class="stats-pie-legend">
+            <span><span class="legend-dot" style="background:#10b981;"></span> Completed</span>
+            <span><span class="legend-dot" style="background:#6366f1;"></span> Waiting</span>
+            <span><span class="legend-dot" style="background:#2563eb;"></span> In Meeting</span>
+            <span><span class="legend-dot" style="background:#f59e42;"></span> Skipped</span>
         </div>
     </div>
 </div>
-<div class="row mt-4">
-    <div class="col-12">
-        <div class="card shadow-sm">
-            <div class="card-body">
-                <h5 class="card-title">Hourly Entries</h5>
-                <canvas id="hourlyChart"></canvas>
-            </div>
-        </div>
-    </div>
+<div class="stats-card" style="margin:0 auto 2.5rem auto;max-width:900px;">
+    <h5>Hourly Entries</h5>
+    <canvas id="hourlyChart"></canvas>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
+const statusPieCtx = document.getElementById('statusPieChart').getContext('2d');
+new Chart(statusPieCtx, {
+    type: 'pie',
+    data: {
+        labels: ['Completed', 'Waiting', 'In Meeting', 'Skipped'],
+        datasets: [{
+            data: [
+                <?php echo $stats['status_counts']['done']; ?>,
+                <?php echo $stats['status_counts']['waiting']; ?>,
+                <?php echo $stats['status_counts']['in_meeting']; ?>,
+                <?php echo $stats['status_counts']['skipped']; ?>
+            ],
+            backgroundColor: [
+                '#10b981', // Completed
+                '#6366f1', // Waiting
+                '#2563eb', // In Meeting
+                '#f59e42'  // Skipped
+            ],
+            borderWidth: 2,
+            borderColor: '#fff',
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: { display: false }
+        }
+    }
+});
 const hourlyCtx = document.getElementById('hourlyChart').getContext('2d');
 new Chart(hourlyCtx, {
     type: 'bar',

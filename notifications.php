@@ -104,6 +104,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajax_reply'])) {
 
 ob_start();
 ?>
+<script>
+// Disable approve/decline buttons after click for instant feedback
+function disableSwapButtons(form, status) {
+    var approveBtn = form.querySelector('button[name="action"][value="approve_swap"]');
+    var declineBtn = form.querySelector('button[name="action"][value="decline_swap"]');
+    if (approveBtn) {
+        approveBtn.disabled = true;
+        approveBtn.style.opacity = 0.6;
+    }
+    if (declineBtn) {
+        declineBtn.disabled = true;
+        declineBtn.style.opacity = 0.6;
+    }
+    // Show status label
+    var statusSpan = document.createElement('span');
+    statusSpan.style.marginLeft = '1em';
+    statusSpan.style.fontWeight = '600';
+    statusSpan.style.fontSize = '1.05em';
+    if (status === 'approved') {
+        statusSpan.innerHTML = '<span style="color:#10b981;">&#10003; Swap Accepted</span>';
+    } else if (status === 'declined') {
+        statusSpan.innerHTML = '<span style="color:#ef4444;">&#10007; Declined</span>';
+    }
+    form.parentNode.appendChild(statusSpan);
+}
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.swap-action-form').forEach(function(form) {
+        form.addEventListener('submit', function(e) {
+            var action = e.submitter ? e.submitter.value : '';
+            disableSwapButtons(form, action === 'approve_swap' ? 'approved' : 'declined');
+        });
+    });
+});
+</script>
 <h2>Notifications</h2>
 <div class="mt-4">
     <div class="row g-4">
@@ -146,7 +180,7 @@ ob_start();
                         </div>
                         <div class="notification-actions">
                             <?php if ($notification['type'] === 'swap_request' && !$notification['is_read']): ?>
-                                <form method="POST" class="d-inline">
+                                <form method="POST" class="d-inline swap-action-form">
                                     <input type="hidden" name="notification_id" value="<?php echo $notification['id']; ?>">
                                     <input type="hidden" name="from_user_id" value="<?php echo $notification['related_user_id']; ?>">
                                     <input type="hidden" name="queue_id" value="<?php echo $notification['related_queue_id']; ?>">
@@ -211,45 +245,6 @@ ob_start();
         </div>
     </div>
 <?php endif; ?>
-<script>
-document.querySelectorAll('.reply-btn').forEach(btn => {
-    btn.addEventListener('click', function() {
-        const id = this.getAttribute('data-id');
-        document.getElementById('reply-form-' + id).style.display = 'block';
-    });
-});
-function hideReplyForm(id) {
-    document.getElementById('reply-form-' + id).style.display = 'none';
-}
-document.querySelectorAll('.reply-form').forEach(form => {
-    form.addEventListener('submit', function(e) {
-        e.preventDefault();
-        const notifId = this.getAttribute('data-id');
-        const studentId = this.querySelector('input[name="student_id"]').value;
-        const queueId = this.querySelector('input[name="queue_id"]').value;
-        const message = this.querySelector('input[name="reply_message"]').value;
-        const formData = new FormData();
-        formData.append('ajax_reply', '1');
-        formData.append('student_id', studentId);
-        formData.append('queue_id', queueId);
-        formData.append('reply_message', message);
-        fetch('notifications.php', {
-            method: 'POST',
-            body: formData
-        })
-        .then(res => res.json())
-        .then(data => {
-            if (data.success) {
-                form.reset();
-                hideReplyForm(notifId);
-                alert('Reply sent!');
-            } else {
-                alert('Error sending reply.');
-            }
-        });
-    });
-});
-</script>
 <style>
 .notification-card {
     background: linear-gradient(120deg, #f8fafc 60%, #e0e7ff 100%);
