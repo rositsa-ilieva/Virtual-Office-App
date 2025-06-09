@@ -95,5 +95,3 @@ CREATE TABLE IF NOT EXISTS swap_requests (
     FOREIGN KEY (receiver_id) REFERENCES users(id),
     UNIQUE KEY unique_active_request (queue_id, sender_id, receiver_id, status)
 );
-
-ALTER TABLE queues ADD COLUMN max_students INT DEFAULT 10 AFTER default_duration;

@@ -3,6 +3,63 @@ session_start();
 require_once 'db.php';
 if (!isset($_SESSION['user_id'])) { header('Location: login.php'); exit(); }
 
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    try {
+        $pdo->beginTransaction();
+
+        $purpose = $_POST["purpose"];
+        $start_time = $_POST["start_time"];
+        $duration = $_POST["duration"];
+        $max_students = $_POST["max_students"];
+        $meeting_link = $_POST["meeting_link"];
+        $access_code = $_POST["access_code"];
+        $specializations = $_POST["specializations"] ?? [];
+        $specialization_year_map = $_POST["specialization_year_map"] ?? '';
+        $teacher_id = $_SESSION["user_id"];
+
+        $specializations_str = implode(",", $specializations);
+
+        // Insert into queues table
+        $stmt = $pdo->prepare("INSERT INTO queues (purpose, start_time, default_duration, max_students, meeting_link, access_code, teacher_id, is_active, created_at, target_specialization, specialization_year_map) VALUES (?, ?, ?, ?, ?, ?, ?, 1, NOW(), ?, ?)");
+        $stmt->execute([
+            $purpose,
+            $start_time,
+            $duration,
+            $max_students,
+            $meeting_link,
+            $access_code,
+            $teacher_id,
+            $specializations_str,
+            $specialization_year_map
+        ]);
+
+        $queue_id = $pdo->lastInsertId();
+
+        // Create time slots for the meeting
+        $start_datetime = new DateTime($start_time);
+        $end_datetime = clone $start_datetime;
+        $end_datetime->add(new DateInterval('PT' . $duration . 'M'));
+
+        $stmt = $pdo->prepare("INSERT INTO time_slots (queue_id, start_time, end_time, is_available) VALUES (?, ?, ?, 1)");
+        $stmt->execute([
+            $queue_id,
+            $start_datetime->format('Y-m-d H:i:s'),
+            $end_datetime->format('Y-m-d H:i:s')
+        ]);
+
+        // Initialize queue statistics
+        $stmt = $pdo->prepare("INSERT INTO queue_statistics (queue_id, total_entries, average_wait_time, average_meeting_duration) VALUES (?, 0, 0, ?)");
+        $stmt->execute([$queue_id, $duration]);
+
+        $pdo->commit();
+        header("Location: queue-schedule.php?success=1");
+        exit();
+    } catch (Exception $e) {
+        $pdo->rollBack();
+        $errors[] = "Error creating meeting: " . $e->getMessage();
+    }
+}
+
 $user_id = $_SESSION['user_id'];
 $user_role = $_SESSION['user_role'] ?? 'teacher';
 $stmt = $pdo->prepare('SELECT * FROM users WHERE id = ?');
