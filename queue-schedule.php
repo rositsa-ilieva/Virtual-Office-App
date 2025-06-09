@@ -185,26 +185,20 @@ if (empty($upcoming_queues)): ?>
     foreach ($upcoming_queues as $queue): ?>
         <div class="upcoming-card">
             <div class="upcoming-card-title"><i class="fa fa-calendar-alt"></i> <?php echo htmlspecialchars($queue['purpose']); ?></div>
-            <div class="upcoming-card-queue" style="margin-bottom:0.2rem;"><i class="fa fa-chalkboard-teacher"></i> <?php 
+            <div class="upcoming-card-meta"><i class="fa fa-chalkboard-teacher"></i> <?php 
                 $teacher_stmt = $pdo->prepare('SELECT name FROM users WHERE id = ?');
                 $teacher_stmt->execute([$queue['teacher_id']]);
                 $teacher = $teacher_stmt->fetch();
                 echo htmlspecialchars($teacher['name'] ?? '');
             ?></div>
-            <div class="upcoming-card-time"><i class="fa fa-clock"></i> <?php echo date('M d, Y', strtotime($queue['start_time'])); ?> &bull; <?php echo date('g:i A', strtotime($queue['start_time'])); ?></div>
+            <div class="upcoming-card-meta"><i class="fa fa-clock"></i> <?php echo date('M d, Y', strtotime($queue['start_time'])); ?> &bull; <?php echo date('g:i A', strtotime($queue['start_time'])); ?></div>
             <?php if (!empty($queue['meeting_link'])): ?>
-                <div class="upcoming-card-link" style="margin-bottom:0.2rem;"><i class="fa fa-link"></i> <a href="<?php echo htmlspecialchars($queue['meeting_link']); ?>" target="_blank" style="color:#2563eb;text-decoration:underline;word-break:break-all;">Meeting Link</a></div>
+                <div class="upcoming-card-link"><i class="fa fa-link"></i> <a href="<?php echo htmlspecialchars($queue['meeting_link']); ?>" target="_blank" style="color:#2563eb;text-decoration:underline;word-break:break-all;">Meeting Link</a></div>
             <?php endif; ?>
             <?php if (!empty($queue['access_code'])): ?>
-                <div class="upcoming-card-access" style="margin-bottom:0.2rem;"><i class="fa fa-key"></i> Access Code: <span style="font-weight:600;letter-spacing:1px;"> <?php echo htmlspecialchars($queue['access_code']); ?></span></div>
+                <div class="upcoming-card-access"><i class="fa fa-key"></i> <span style="font-weight:600;letter-spacing:1px;"> <?php echo htmlspecialchars($queue['access_code']); ?></span></div>
             <?php endif; ?>
-            <div class="upcoming-card-status">
-                <?php if ($queue['waiting_count'] > 0): ?>
-                    <i class="fa fa-hourglass-half"></i> Waiting
-                <?php else: ?>
-                    <i class="fa fa-info-circle"></i> <?php echo isset($queue['my_status']) && $queue['my_status'] !== null ? htmlspecialchars(ucfirst($queue['my_status'])) : 'N/A'; ?>
-                <?php endif; ?>
-            </div>
+            <div class="upcoming-card-status"><i class="fa fa-hourglass-half"></i> Waiting</div>
             <div class="upcoming-card-actions">
                 <?php if ($user_role === 'student' && empty($queue['my_status'])): ?>
                     <a href="join.php?id=<?php echo $queue['id']; ?>" class="btn-primary">
