@@ -40,14 +40,25 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         if ($stmt->fetch()) {
             $error = 'Email already registered';
         } else {
-            // Create new user
-            $hashed_password = password_hash($password, PASSWORD_DEFAULT);
-            $stmt = $pdo->prepare('INSERT INTO users (name, email, password, role, faculty_number, teacher_role, subjects, specialization, year_of_study) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)');
-            if ($stmt->execute([$name, $email, $hashed_password, $role, $faculty_number, $teacher_role, $subjects, $specialization, $year_of_study])) {
-                header('Location: login.php?message=registered');
-                exit();
-            } else {
-                $error = 'Registration failed. Please try again.';
+            // Check if faculty number already exists (for students)
+            if ($role === 'student' && !empty($faculty_number)) {
+                $stmt = $pdo->prepare('SELECT id FROM users WHERE faculty_number = ?');
+                $stmt->execute([$faculty_number]);
+                if ($stmt->fetch()) {
+                    $error = 'A user with this faculty number already exists.';
+                }
+            }
+            // Only insert if no error
+            if (empty($error)) {
+                // Create new user
+                $hashed_password = password_hash($password, PASSWORD_DEFAULT);
+                $stmt = $pdo->prepare('INSERT INTO users (name, email, password, role, faculty_number, teacher_role, subjects, specialization, year_of_study) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)');
+                if ($stmt->execute([$name, $email, $hashed_password, $role, $faculty_number, $teacher_role, $subjects, $specialization, $year_of_study])) {
+                    header('Location: login.php?message=registered');
+                    exit();
+                } else {
+                    $error = 'Registration failed. Please try again.';
+                }
             }
         }
     }

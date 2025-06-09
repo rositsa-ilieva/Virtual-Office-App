@@ -20,6 +20,9 @@ ob_start();
     text-align: left;
     margin: 2.5rem 0 2rem 0;
     letter-spacing: 0.01em;
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
 }
 .myqueues-cards {
     display: grid;
@@ -126,7 +129,7 @@ ob_start();
   .cards-container { grid-template-columns: 1fr; }
 }
 </style>
-<div class="myqueues-title"><i class="fa fa-list"></i> My Queues</div>
+<div class="myqueues-title">📋 My Queues</div>
 <div class="cards-container">
 <?php
 // Get all queues where this student is currently waiting or in a meeting

@@ -15,7 +15,6 @@ $success = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $name = $_POST['name'] ?? '';
     $email = $_POST['email'] ?? '';
-    $faculty_number = $_POST['faculty_number'] ?? '';
     $teacher_role = $_POST['teacher_role'] ?? '';
     $subjects = $_POST['subjects'] ?? '';
     $specialization = $_POST['specialization'] ?? ($user['specialization'] ?? '');
@@ -29,8 +28,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $params = [$name, $email];
 
             if ($user_role === 'student') {
-                $sql .= ', faculty_number = ?, specialization = ?, year_of_study = ?';
-                $params[] = $faculty_number;
+                // Do NOT update faculty_number
+                $sql .= ', specialization = ?, year_of_study = ?';
                 $params[] = $specialization;
                 $params[] = $year_of_study;
             } else if ($user_role === 'teacher') {
@@ -207,7 +206,7 @@ ob_start();
       <?php if ($user_role === 'student'): ?>
         <div class="form-group">
           <span class="input-icon"><i class="fa fa-id-card"></i></span>
-          <input type="text" name="faculty_number" class="form-control" value="<?php echo htmlspecialchars($user['faculty_number'] ?? ''); ?>" required placeholder="Faculty Number">
+          <input type="text" name="faculty_number" class="form-control" value="<?php echo htmlspecialchars($user['faculty_number'] ?? ''); ?>" required placeholder="Faculty Number" readonly>
         </div>
         <div class="form-group">
           <span class="input-icon"><i class="fa fa-graduation-cap"></i></span>

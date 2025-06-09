@@ -133,7 +133,27 @@ document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('.swap-action-form').forEach(function(form) {
         form.addEventListener('submit', function(e) {
             var action = e.submitter ? e.submitter.value : '';
-            disableSwapButtons(form, action === 'approve_swap' ? 'approved' : 'declined');
+            if (action === 'approve_swap') {
+                e.preventDefault();
+                var notificationId = form.querySelector('input[name="notification_id"]').value;
+                var fromUserId = form.querySelector('input[name="from_user_id"]').value;
+                var queueId = form.querySelector('input[name="queue_id"]').value;
+                var formData = new URLSearchParams();
+                formData.append('action', 'approve_swap');
+                formData.append('notification_id', notificationId);
+                formData.append('from_user_id', fromUserId);
+                formData.append('queue_id', queueId);
+                fetch('notifications.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: formData.toString()
+                }).then(function(res) {
+                    // After swap, reload the queue table
+                    loadQueueTable(queueId);
+                    // Optionally, disable the buttons
+                    disableSwapButtons(form, 'approved');
+                });
+            }
         });
     });
     document.querySelectorAll('.notification-delete-btn').forEach(function(btn) {
@@ -154,6 +174,20 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
     });
+    // Function to load the queue table
+    function loadQueueTable(queueId) {
+        if (!queueId) return;
+        fetch('queue-table.php?queue_id=' + encodeURIComponent(queueId))
+            .then(res => res.text())
+            .then(html => {
+                document.getElementById('queue-table-container').innerHTML = html;
+            });
+    }
+    // Optionally, load the table for the first notification's queue
+    var firstQueueId = document.querySelector('.swap-action-form input[name="queue_id"]');
+    if (firstQueueId) {
+        loadQueueTable(firstQueueId.value);
+    }
 });
 </script>
 <style>
@@ -269,9 +303,20 @@ document.addEventListener('DOMContentLoaded', function() {
     .notification-card { padding: 1.1rem 0.6rem; }
     .notification-timestamp { right: 0.6rem; left: auto; bottom: 0.7rem; }
 }
+.notifications-title {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #1e293b;
+    text-align: left;
+    margin: 2.5rem 0 2rem 0;
+    letter-spacing: 0.01em;
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+}
 </style>
+<div class="notifications-title">🔔 Notifications</div>
 <div class="notifications-container">
-<h2 style="text-align:center;font-weight:700;color:#1e293b;margin-bottom:2rem;">Notifications</h2>
 <div class="mt-4">
     <div class="row g-4">
         <?php
@@ -347,7 +392,6 @@ document.addEventListener('DOMContentLoaded', function() {
                             <div class="notification-title">
                                 <span class="notification-icon"><?php echo notificationTypeIcon($notification['type']); ?></span>
                                 <?php echo notificationContext($notification['type']); ?>
-                                <?php if (!$notification['is_read']): ?><span class="notification-badge">New</span><?php endif; ?>
                             </div>
                         </div>
                         <?php if ($notification['queue_purpose']): ?>
@@ -386,7 +430,7 @@ document.addEventListener('DOMContentLoaded', function() {
             <?php endforeach;
         endif; ?>
     </div>
-</div>
+    </div>
 </div>
 
 <?php if ($user_role === 'teacher'): ?>
@@ -434,5 +478,4 @@ document.addEventListener('DOMContentLoaded', function() {
 <?php
 $content = ob_get_clean();
 require 'layout.php';
-?> 
 ?> 

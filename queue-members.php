@@ -303,16 +303,16 @@ ob_start();
           </tr>
         </thead>
         <tbody>
-        <?php if (empty($members)): ?>
+<?php if (empty($members)): ?>
           <tr><td colspan="7" style="text-align:center;color:#64748b;font-size:1.15rem;padding:2.5rem 0;">No students currently in queue.</td></tr>
-        <?php else:
-          foreach ($members as $entry):
-            $isMe = $entry['student_id'] == $user_id;
-            $status = strtolower($entry['status']);
-            $statusClass = $status === 'waiting' ? 'waiting' : ($status === 'in_meeting' ? 'in_meeting' : ($status === 'away' ? 'away' : 'other'));
+<?php else:
+    foreach ($members as $entry):
+        $isMe = $entry['student_id'] == $user_id;
+        $status = strtolower($entry['status']);
+        $statusClass = $status === 'waiting' ? 'waiting' : ($status === 'in_meeting' ? 'in_meeting' : ($status === 'away' ? 'away' : 'other'));
             $statusColor = $status === 'waiting' ? '#6366f1' : ($status === 'in_meeting' ? '#2563eb' : ($status === 'away' ? '#f59e42' : '#64748b'));
-            $isSwapPending = ($pending_swap_with !== null);
-            $isThisPending = ($pending_swap_with !== null && $entry['student_id'] == $pending_swap_with);
+        $isSwapPending = ($pending_swap_with !== null);
+        $isThisPending = ($pending_swap_with !== null && $entry['student_id'] == $pending_swap_with);
             $spec_stmt = $pdo->prepare('SELECT specialization FROM users WHERE id = ?');
             $spec_stmt->execute([$entry['student_id']]);
             $spec = $spec_stmt->fetchColumn();
@@ -330,29 +330,29 @@ ob_start();
             <td style="padding:1.1em 1.3em;font-size:1.07rem;white-space:nowrap;"> <?php echo $entry['estimated_start_time'] ? date('g:i A', strtotime($entry['estimated_start_time'])) : '-'; ?> </td>
             <td style="padding:1.1em 1.3em;">
               <div style="display:flex;gap:0.7rem;justify-content:center;align-items:center;">
-                <?php if ($isMe): ?>
-                  <?php if ($entry['status'] === 'waiting'): ?>
+            <?php if ($isMe): ?>
+                <?php if ($entry['status'] === 'waiting'): ?>
                     <form method="POST" style="display:inline-block;"><button type="submit" name="mark_away" style="background:#fbbf24;color:#fff;font-size:1.09rem;font-weight:700;padding:0.7em 1.7em;border-radius:14px;border:none;box-shadow:0 2px 8px rgba(251,191,36,0.10);">Mark Away</button></form>
-                  <?php elseif ($entry['status'] === 'away'): ?>
+                <?php elseif ($entry['status'] === 'away'): ?>
                     <form method="POST" style="display:inline-block;"><button type="submit" name="return_queue" style="background:#6366f1;color:#fff;font-size:1.09rem;font-weight:700;padding:0.7em 1.7em;border-radius:14px;border:none;box-shadow:0 2px 8px rgba(99,102,241,0.10);">Return</button></form>
-                  <?php endif; ?>
-                <?php elseif ($entry['status'] === 'waiting' && !$isMe): ?>
-                  <form method="POST" style="display:inline-block;">
+                <?php endif; ?>
+            <?php elseif ($entry['status'] === 'waiting' && !$isMe): ?>
+                <form method="POST" style="display:inline-block;">
                     <input type="hidden" name="swap_with" value="<?php echo $entry['student_id']; ?>">
                     <?php if ($isSwapPending): ?>
                       <button type="button" style="background:#6366f1;color:#fff;font-size:1.09rem;font-weight:700;padding:0.7em 1.7em;border-radius:14px;border:none;opacity:0.7;cursor:not-allowed;">
-                        <?php if ($isThisPending): ?>
+                            <?php if ($isThisPending): ?>
                           Pending <span style="margin-left:0.5em;font-size:0.98em;color:#6366f1;vertical-align:middle;">⏳</span>
-                        <?php else: ?>
+                            <?php else: ?>
                           Request Swap
-                        <?php endif; ?>
-                      </button>
+                            <?php endif; ?>
+                        </button>
                     <?php else: ?>
                       <button type="submit" name="request_swap" style="background:#6366f1;color:#fff;font-size:1.09rem;font-weight:700;padding:0.7em 1.7em;border-radius:14px;border:none;box-shadow:0 2px 8px rgba(99,102,241,0.10);">Request Swap</button>
                     <?php endif; ?>
-                  </form>
-                <?php endif; ?>
-              </div>
+                </form>
+            <?php endif; ?>
+        </div>
             </td>
           </tr>
         <?php endforeach; endif; ?>

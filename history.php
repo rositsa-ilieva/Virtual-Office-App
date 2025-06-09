@@ -20,6 +20,9 @@ ob_start();
     text-align: left;
     margin: 2.5rem 0 2rem 0;
     letter-spacing: 0.01em;
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
 }
 .past-cards {
     display: grid;
@@ -100,7 +103,7 @@ ob_start();
     .past-card { padding: 1.2rem 0.7rem; }
 }
 </style>
-<div class="past-title"><i class="fa fa-history"></i> Past Meetings</div>
+<div class="past-title">📜 Past Meetings</div>
 <div class="past-cards">
 <?php
 // Get all past meetings for this student
@@ -131,7 +134,6 @@ if (empty($past_meetings)) {
         echo '<div class="past-card-time"><i class="fa fa-calendar-alt"></i> ' . date('M d, Y', strtotime($meeting['ended_at'])) . '</div>';
         echo '<div class="past-card-time"><i class="fa fa-clock"></i> ' . date('g:i A', strtotime($meeting['started_at'])) . ' - ' . date('g:i A', strtotime($meeting['ended_at'])) . '</div>';
         echo '<div class="past-card-time"><i class="fa fa-hourglass-half"></i> Duration: ' . $meeting['duration'] . ' minutes</div>';
-        echo '<div class="past-card-position"><i class="fa fa-list-ol"></i> Position in queue: ' . htmlspecialchars($meeting['my_position']) . '</div>';
         if (!empty($meeting['meeting_link'])) {
             echo '<a class="past-card-link" href="' . htmlspecialchars($meeting['meeting_link']) . '" target="_blank"><i class="fa fa-link"></i> Meeting Link</a>';
         }

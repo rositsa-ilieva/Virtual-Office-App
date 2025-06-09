@@ -16,9 +16,12 @@ ob_start();
     font-size: 2rem;
     font-weight: 700;
     color: #1e293b;
-    text-align: center;
+    text-align: left;
     margin: 2.5rem 0 2rem 0;
     letter-spacing: 0.01em;
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
 }
 .upcoming-cards {
     display: grid;
@@ -124,7 +127,7 @@ ob_start();
   .cards-container { grid-template-columns: 1fr; }
 }
 </style>
-<div class="upcoming-title">Upcoming Meetings</div>
+<div class="upcoming-title">🗓️ Upcoming Meetings</div>
 <div class="cards-container">
 <?php
 if ($user_role === 'student') {

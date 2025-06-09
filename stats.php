@@ -90,7 +90,7 @@ ob_start();
     .stats-grid { grid-template-columns: 1fr; }
 }
 </style>
-<div class="stats-title-page"><i class="fa fa-chart-bar"></i>Queue Statistics</div>
+<div class="stats-title-page">📈 Queue Statistics</div>
 <div class="stats-grid">
 <?php
 $stmt = $pdo->prepare('SELECT * FROM queues WHERE teacher_id = ? ORDER BY start_time DESC');

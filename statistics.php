@@ -271,7 +271,7 @@ ob_start();
     .stats-grid { grid-template-columns: 1fr; }
 }
 </style>
-<div class="stats-title-page"><i class="fa fa-chart-pie"></i>Statistics: <?php echo htmlspecialchars($queue['purpose']); ?></div>
+<div class="stats-title-page">📈 Statistics<?php if (isset($queue['purpose'])) echo ': ' . htmlspecialchars($queue['purpose']); ?></div>
 <div class="stats-grid">
     <div class="stats-card">
         <h5>Status Distribution</h5>

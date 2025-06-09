@@ -247,7 +247,7 @@ if ($queue_id) {
     }
 } else {
     // List all queues for this teacher
-    echo '<div class="manage-queue-title-page"><i class="fa fa-layer-group"></i>Manage Queues</div>';
+    echo '<div class="manage-queue-title-page">🛠️ Manage Queues</div>';
     echo '<div class="queue-grid">';
     $stmt = $pdo->prepare('SELECT * FROM queues WHERE teacher_id = ? ORDER BY start_time DESC');
     $stmt->execute([$user_id]);
