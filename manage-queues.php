@@ -213,9 +213,9 @@ if ($queue_id) {
         }
         echo '<a href="manage-queues.php" class="btn-modern" style="background:linear-gradient(90deg,#f1f5f9 0%,#6366f1 100%);color:#6366f1;">Back to My Queues</a>';
         echo '</div>';
-        echo '<div class="table-responsive"><table class="table-modern"><thead><tr><th>Position</th><th>Name</th><th>Specialization</th><th>Status</th><th>Action</th></tr></thead><tbody>';
+        echo '<div class="table-responsive"><table class="table-modern"><thead><tr><th>Position</th><th>Name</th><th>Specialization</th><th>Status</th><th>Comment</th><th>Action</th></tr></thead><tbody>';
         if (empty($entries)) {
-            echo '<tr><td colspan="5" class="text-center">No students currently in queue.</td></tr>';
+            echo '<tr><td colspan="6" class="text-center">No students currently in queue.</td></tr>';
         } else {
             foreach ($entries as $entry) {
                 $statusClass = 'status-other';
@@ -228,6 +228,7 @@ if ($queue_id) {
                 echo '<td>' . htmlspecialchars($entry['student_name']) . '</td>';
                 echo '<td>' . (!empty($entry['student_specialization']) ? htmlspecialchars($entry['student_specialization']) : 'Not set') . '</td>';
                 echo '<td><span class="status-badge ' . $statusClass . '">' . ucfirst(str_replace('_', ' ', $entry['status'])) . '</span></td>';
+                echo '<td>' . (!empty($entry['comment']) ? htmlspecialchars($entry['comment']) : '-') . '</td>';
                 echo '<td>';
                 if ($entry['status'] === 'waiting') {
                     echo '<form method="POST" style="display:inline-block;"><input type="hidden" name="entry_id" value="' . $entry['id'] . '"><button type="submit" name="action" value="start_meeting" class="btn-modern" style="padding:0.4em 1em;font-size:0.98em;">Start Meeting</button></form> ';
