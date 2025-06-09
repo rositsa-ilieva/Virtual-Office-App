@@ -176,7 +176,7 @@ if (empty($upcoming_queues)): ?>
                 <?php if ($queue['waiting_count'] > 0): ?>
                     <i class="fa fa-hourglass-half"></i> Waiting
                 <?php else: ?>
-                    <i class="fa fa-info-circle"></i> <?php echo isset($queue['my_status']) && $queue['my_status'] !== null ? htmlspecialchars(ucfirst($queue['my_status'])) : 'N/A'; ?>
+                    <i class="fa fa-info-circle"></i> <?php echo isset($queue['my_status']) && $queue['my_status'] !== null ? htmlspecialchars(ucfirst($queue['my_status'])) : 'Available'; ?>
                 <?php endif; ?>
             </div>
             <div class="upcoming-card-actions">
