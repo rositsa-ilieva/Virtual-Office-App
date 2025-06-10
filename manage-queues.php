@@ -271,11 +271,24 @@ if ($queue_id) {
 } else {
     // List all queues for this teacher
     echo '<div class="manage-queue-title-page">🛠️ Manage Queues</div>';
+    
+    // First, update any past queues to inactive status
+    $stmt = $pdo->prepare('UPDATE queues SET is_active = 0 WHERE teacher_id = ? AND end_time IS NOT NULL AND end_time < NOW()');
+    $stmt->execute([$user_id]);
+    
+    // Get all queues
     $stmt = $pdo->prepare('SELECT * FROM queues WHERE teacher_id = ? ORDER BY start_time DESC');
     $stmt->execute([$user_id]);
     $queues = $stmt->fetchAll();
-    $active_queues = array_filter($queues, function($q) { return $q['is_active']; });
-    $inactive_queues = array_filter($queues, function($q) { return !$q['is_active']; });
+    
+    // Filter queues based on is_active flag
+    $active_queues = array_filter($queues, function($q) { 
+        return $q['is_active'] == 1; 
+    });
+    $inactive_queues = array_filter($queues, function($q) { 
+        return $q['is_active'] == 0; 
+    });
+    
     // Active Queues
     echo '<h3 style="margin-bottom:1.2rem;color:#2563eb;">Active Queues</h3>';
     echo '<div class="queue-grid">';
@@ -292,6 +305,7 @@ if ($queue_id) {
         }
     }
     echo '</div>';
+    
     // Inactive Queues
     echo '<h3 style="margin:2.5rem 0 1.2rem 0;color:#64748b;">Inactive Queues</h3>';
     echo '<div class="queue-grid">';
@@ -299,9 +313,16 @@ if ($queue_id) {
         echo '<div class="col-12"><div class="alert alert-info">No inactive queues.</div></div>';
     } else {
         foreach ($inactive_queues as $queue) {
+            $status_text = 'Inactive';
+            $status_class = 'status-skipped';
+            if (!empty($queue['end_time']) && strtotime($queue['end_time']) < time()) {
+                $status_text = 'Past Date';
+                $status_class = 'status-other';
+            }
+            
             echo '<div class="queue-card">';
             echo '<div class="manage-queue-header"><i class="fa fa-layer-group"></i><span class="manage-queue-title">' . htmlspecialchars($queue['purpose']) . '</span></div>';
-            echo '<div style="color:#64748b;font-size:1.05rem;margin-bottom:1.1rem;"><strong>Start:</strong> ' . date('M d, Y g:i A', strtotime($queue['start_time'])) . '<br><strong>Duration:</strong> ' . $queue['default_duration'] . ' min<br><strong>Max Students:</strong> ' . ($queue['max_students'] ?? '-') . '<br><strong>Status:</strong> <span class="status-badge status-skipped">Inactive</span></div>';
+            echo '<div style="color:#64748b;font-size:1.05rem;margin-bottom:1.1rem;"><strong>Start:</strong> ' . date('M d, Y g:i A', strtotime($queue['start_time'])) . '<br><strong>Duration:</strong> ' . $queue['default_duration'] . ' min<br><strong>Max Students:</strong> ' . ($queue['max_students'] ?? '-') . '<br><strong>Status:</strong> <span class="status-badge ' . $status_class . '">' . $status_text . '</span></div>';
             echo '<a href="manage-queues.php?queue_id=' . $queue['id'] . '" class="btn-modern">Manage</a> ';
             echo '<a href="statistics.php?id=' . $queue['id'] . '" class="btn-modern" style="background:linear-gradient(90deg,#f1f5f9 0%,#6366f1 100%);color:#6366f1;">Statistics</a>';
             echo '</div>';

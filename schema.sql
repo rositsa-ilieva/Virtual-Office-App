@@ -95,3 +95,17 @@ CREATE TABLE IF NOT EXISTS swap_requests (
     FOREIGN KEY (receiver_id) REFERENCES users(id),
     UNIQUE KEY unique_active_request (queue_id, sender_id, receiver_id, status)
 );
+
+CREATE TABLE IF NOT EXISTS notifications (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    type ENUM('student_message', 'teacher_reply', 'swap_request', 'swap_approved', 'swap_declined') NOT NULL,
+    message TEXT,
+    is_read BOOLEAN DEFAULT FALSE,
+    related_queue_id INT,
+    related_user_id INT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id),
+    FOREIGN KEY (related_queue_id) REFERENCES queues(id),
+    FOREIGN KEY (related_user_id) REFERENCES users(id)
+);

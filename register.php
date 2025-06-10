@@ -18,8 +18,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $confirm_password = $_POST['confirm_password'] ?? '';
     $role = $_POST['role'] ?? '';
     $faculty_number = $_POST['faculty_number'] ?? '';
-    $teacher_role = $_POST['teacher_role'] ?? '';
-    $subjects = $_POST['subjects'] ?? '';
     $specialization = $_POST['specialization'] ?? '';
     $year_of_study = $_POST['year_of_study'] ?? '';
 
@@ -31,8 +29,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $error = 'Password must be at least 6 characters long';
     } elseif ($role === 'student' && (empty($faculty_number) || empty($specialization) || empty($year_of_study))) {
         $error = 'Faculty number, specialization, and year of study are required for students';
-    } elseif ($role === 'teacher' && (empty($teacher_role) || empty($subjects))) {
-        $error = 'Role and subjects are required for teachers';
     } else {
         // Check if email already exists
         $stmt = $pdo->prepare('SELECT id FROM users WHERE email = ?');
@@ -52,8 +48,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             if (empty($error)) {
                 // Create new user
                 $hashed_password = password_hash($password, PASSWORD_DEFAULT);
-                $stmt = $pdo->prepare('INSERT INTO users (name, email, password, role, faculty_number, teacher_role, subjects, specialization, year_of_study) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)');
-                if ($stmt->execute([$name, $email, $hashed_password, $role, $faculty_number, $teacher_role, $subjects, $specialization, $year_of_study])) {
+                $stmt = $pdo->prepare('INSERT INTO users (name, email, password, role, faculty_number, specialization, year_of_study) VALUES (?, ?, ?, ?, ?, ?, ?)');
+                if ($stmt->execute([$name, $email, $hashed_password, $role, $faculty_number, $specialization, $year_of_study])) {
                     header('Location: login.php?message=registered');
                     exit();
                 } else {

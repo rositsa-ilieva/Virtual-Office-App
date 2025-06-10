@@ -133,7 +133,7 @@ ob_start();
 <div class="cards-container">
 <?php
 // Get all queues where this student is currently waiting or in a meeting
-$sql = "SELECT q.id as queue_id, q.purpose, q.description, q.meeting_link, q.access_code, q.start_time, qe.position as my_position, qe.status, qe.estimated_start_time, u.name as teacher_name, u.email as teacher_email, u.subjects as teacher_subjects
+$sql = "SELECT q.id as queue_id, q.purpose, q.description, q.meeting_link, q.access_code, q.start_time, qe.position as my_position, qe.status, qe.estimated_start_time, u.name as teacher_name, u.email as teacher_email
         FROM queue_entries qe
         JOIN queues q ON qe.queue_id = q.id
         JOIN users u ON q.teacher_id = u.id
