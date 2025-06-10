@@ -169,20 +169,38 @@ if ($queue_id) {
         echo '<div class="alert alert-danger">Queue not found or access denied.</div>';
     } else {
         // Handle actions (start meeting, mark done, etc.)
-        if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'], $_POST['entry_id'])) {
-            $entry_id = intval($_POST['entry_id']);
-            if ($_POST['action'] === 'start_meeting') {
-                // Mark student as in_meeting and set started_at
-                $stmt = $pdo->prepare('UPDATE queue_entries SET status = "in_meeting", started_at = NOW() WHERE id = ? AND queue_id = ?');
-                $stmt->execute([$entry_id, $queue_id]);
-            } elseif ($_POST['action'] === 'end_meeting') {
-                // Mark student as done and set ended_at
-                $stmt = $pdo->prepare('UPDATE queue_entries SET status = "done", ended_at = NOW() WHERE id = ? AND queue_id = ?');
-                $stmt->execute([$entry_id, $queue_id]);
-            } elseif ($_POST['action'] === 'skip') {
-                // Mark student as skipped
-                $stmt = $pdo->prepare('UPDATE queue_entries SET status = "skipped", ended_at = NOW() WHERE id = ? AND queue_id = ?');
-                $stmt->execute([$entry_id, $queue_id]);
+        if (
+            $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) &&
+            (
+                isset($_POST['entry_id']) || $_POST['action'] === 'start_all_meetings' || $_POST['action'] === 'end_all_meetings'
+            )
+        ) {
+            if ($_POST['action'] === 'start_all_meetings') {
+                // Set all waiting students to in_meeting and set started_at
+                $stmt = $pdo->prepare('UPDATE queue_entries SET status = "in_meeting", started_at = NOW() WHERE queue_id = ? AND status = "waiting"');
+                $stmt->execute([$queue_id]);
+            } elseif ($_POST['action'] === 'end_all_meetings') {
+                // Set all in_meeting students to done and set ended_at
+                $stmt = $pdo->prepare('UPDATE queue_entries SET status = "done", ended_at = NOW() WHERE queue_id = ? AND status = "in_meeting"');
+                $stmt->execute([$queue_id]);
+                // After ending all, redirect to main manage-queues page
+                header('Location: manage-queues.php');
+                exit();
+            } else {
+                $entry_id = intval($_POST['entry_id']);
+                if ($_POST['action'] === 'start_meeting') {
+                    // Mark student as in_meeting and set started_at
+                    $stmt = $pdo->prepare('UPDATE queue_entries SET status = "in_meeting", started_at = NOW() WHERE id = ? AND queue_id = ?');
+                    $stmt->execute([$entry_id, $queue_id]);
+                } elseif ($_POST['action'] === 'end_meeting') {
+                    // Mark student as done and set ended_at
+                    $stmt = $pdo->prepare('UPDATE queue_entries SET status = "done", ended_at = NOW() WHERE id = ? AND queue_id = ?');
+                    $stmt->execute([$entry_id, $queue_id]);
+                } elseif ($_POST['action'] === 'skip') {
+                    // Mark student as skipped
+                    $stmt = $pdo->prepare('UPDATE queue_entries SET status = "skipped", ended_at = NOW() WHERE id = ? AND queue_id = ?');
+                    $stmt->execute([$entry_id, $queue_id]);
+                }
             }
             // Reorder positions for waiting students
             $pdo->exec("SET @pos = 0;");
@@ -244,21 +262,46 @@ if ($queue_id) {
         // Optionally, add past students table here with same style
         echo '</div>';
         echo '</div>';
+        // Add the buttons in the queue management view
+        echo '<div style="display:flex;gap:1rem;margin-bottom:1.5rem;">';
+        echo '<form method="POST"><input type="hidden" name="action" value="start_all_meetings"><button type="submit" class="btn-modern" style="background:#10b981;">Start Meeting with All</button></form>';
+        echo '<form method="POST"><input type="hidden" name="action" value="end_all_meetings"><button type="submit" class="btn-modern" style="background:#ef4444;">End Meeting with All</button></form>';
+        echo '</div>';
     }
 } else {
     // List all queues for this teacher
     echo '<div class="manage-queue-title-page">🛠️ Manage Queues</div>';
-    echo '<div class="queue-grid">';
     $stmt = $pdo->prepare('SELECT * FROM queues WHERE teacher_id = ? ORDER BY start_time DESC');
     $stmt->execute([$user_id]);
     $queues = $stmt->fetchAll();
-    if (empty($queues)) {
-        echo '<div class="col-12"><div class="alert alert-info">You have not created any queues yet.</div></div>';
+    $active_queues = array_filter($queues, function($q) { return $q['is_active']; });
+    $inactive_queues = array_filter($queues, function($q) { return !$q['is_active']; });
+    // Active Queues
+    echo '<h3 style="margin-bottom:1.2rem;color:#2563eb;">Active Queues</h3>';
+    echo '<div class="queue-grid">';
+    if (empty($active_queues)) {
+        echo '<div class="col-12"><div class="alert alert-info">No active queues.</div></div>';
     } else {
-        foreach ($queues as $queue) {
+        foreach ($active_queues as $queue) {
             echo '<div class="queue-card">';
             echo '<div class="manage-queue-header"><i class="fa fa-layer-group"></i><span class="manage-queue-title">' . htmlspecialchars($queue['purpose']) . '</span></div>';
-            echo '<div style="color:#64748b;font-size:1.05rem;margin-bottom:1.1rem;"><strong>Start:</strong> ' . date('M d, Y g:i A', strtotime($queue['start_time'])) . '<br><strong>Duration:</strong> ' . $queue['default_duration'] . ' min<br><strong>Max Students:</strong> ' . ($queue['max_students'] ?? '-') . '<br><strong>Status:</strong> ' . ($queue['is_active'] ? '<span class="status-badge status-done">Active</span>' : '<span class="status-badge status-skipped">Inactive</span>') . '</div>';
+            echo '<div style="color:#64748b;font-size:1.05rem;margin-bottom:1.1rem;"><strong>Start:</strong> ' . date('M d, Y g:i A', strtotime($queue['start_time'])) . '<br><strong>Duration:</strong> ' . $queue['default_duration'] . ' min<br><strong>Max Students:</strong> ' . ($queue['max_students'] ?? '-') . '<br><strong>Status:</strong> <span class="status-badge status-done">Active</span></div>';
+            echo '<a href="manage-queues.php?queue_id=' . $queue['id'] . '" class="btn-modern">Manage</a> ';
+            echo '<a href="statistics.php?id=' . $queue['id'] . '" class="btn-modern" style="background:linear-gradient(90deg,#f1f5f9 0%,#6366f1 100%);color:#6366f1;">Statistics</a>';
+            echo '</div>';
+        }
+    }
+    echo '</div>';
+    // Inactive Queues
+    echo '<h3 style="margin:2.5rem 0 1.2rem 0;color:#64748b;">Inactive Queues</h3>';
+    echo '<div class="queue-grid">';
+    if (empty($inactive_queues)) {
+        echo '<div class="col-12"><div class="alert alert-info">No inactive queues.</div></div>';
+    } else {
+        foreach ($inactive_queues as $queue) {
+            echo '<div class="queue-card">';
+            echo '<div class="manage-queue-header"><i class="fa fa-layer-group"></i><span class="manage-queue-title">' . htmlspecialchars($queue['purpose']) . '</span></div>';
+            echo '<div style="color:#64748b;font-size:1.05rem;margin-bottom:1.1rem;"><strong>Start:</strong> ' . date('M d, Y g:i A', strtotime($queue['start_time'])) . '<br><strong>Duration:</strong> ' . $queue['default_duration'] . ' min<br><strong>Max Students:</strong> ' . ($queue['max_students'] ?? '-') . '<br><strong>Status:</strong> <span class="status-badge status-skipped">Inactive</span></div>';
             echo '<a href="manage-queues.php?queue_id=' . $queue['id'] . '" class="btn-modern">Manage</a> ';
             echo '<a href="statistics.php?id=' . $queue['id'] . '" class="btn-modern" style="background:linear-gradient(90deg,#f1f5f9 0%,#6366f1 100%);color:#6366f1;">Statistics</a>';
             echo '</div>';

@@ -56,34 +56,42 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $comment = $_POST['comment'] ?? '';
     $is_comment_public = isset($_POST['is_comment_public']) ? (int)$_POST['is_comment_public'] : 0;
 
-    // Get next position
-    $stmt = $pdo->prepare('SELECT MAX(position) as max_pos FROM queue_entries WHERE queue_id = ?');
+    // ENFORCE MAX STUDENTS LIMIT
+    $stmt = $pdo->prepare('SELECT COUNT(*) as cnt FROM queue_entries WHERE queue_id = ? AND status IN ("waiting", "in_meeting")');
     $stmt->execute([$queue_id]);
-    $result = $stmt->fetch();
-    $position = ($result['max_pos'] ?? 0) + 1;
-
-    // Calculate estimated start time if queue is automatic
-    $estimated_start_time = null;
-    if ($queue['is_automatic']) {
-        $stmt = $pdo->prepare('SELECT COUNT(*) as waiting_count FROM queue_entries WHERE queue_id = ? AND status = "waiting"');
+    $current_count = $stmt->fetchColumn();
+    if ($current_count >= $queue['max_students']) {
+        $error = 'The maximum number of students for this meeting has been reached.';
+    } else {
+        // Get next position
+        $stmt = $pdo->prepare('SELECT MAX(position) as max_pos FROM queue_entries WHERE queue_id = ?');
         $stmt->execute([$queue_id]);
         $result = $stmt->fetch();
-        $waiting_count = $result['waiting_count'];
-        $estimated_start_time = date('Y-m-d H:i:s', strtotime("+{$waiting_count} minutes"));
-    }
+        $position = ($result['max_pos'] ?? 0) + 1;
 
-    try {
-        $sql = "INSERT INTO queue_entries (queue_id, student_id, comment, is_comment_public, position, estimated_start_time) 
-                VALUES (?, ?, ?, ?, ?, ?)";
-        $stmt = $pdo->prepare($sql);
-        if ($stmt->execute([$queue_id, $user_id, $comment, $is_comment_public, $position, $estimated_start_time])) {
-            header('Location: queue-members.php?id=' . $queue_id);
-            exit();
-        } else {
-            $error = 'Failed to join queue. Please try again.';
+        // Calculate estimated start time if queue is automatic
+        $estimated_start_time = null;
+        if ($queue['is_automatic']) {
+            $stmt = $pdo->prepare('SELECT COUNT(*) as waiting_count FROM queue_entries WHERE queue_id = ? AND status = "waiting"');
+            $stmt->execute([$queue_id]);
+            $result = $stmt->fetch();
+            $waiting_count = $result['waiting_count'];
+            $estimated_start_time = date('Y-m-d H:i:s', strtotime("+{$waiting_count} minutes"));
         }
-    } catch (PDOException $e) {
-        $error = 'An error occurred. Please try again.';
+
+        try {
+            $sql = "INSERT INTO queue_entries (queue_id, student_id, comment, is_comment_public, position, estimated_start_time) 
+                    VALUES (?, ?, ?, ?, ?, ?)";
+            $stmt = $pdo->prepare($sql);
+            if ($stmt->execute([$queue_id, $user_id, $comment, $is_comment_public, $position, $estimated_start_time])) {
+                header('Location: queue-members.php?id=' . $queue_id);
+                exit();
+            } else {
+                $error = 'Failed to join queue. Please try again.';
+            }
+        } catch (PDOException $e) {
+            $error = 'An error occurred. Please try again.';
+        }
     }
 }
 

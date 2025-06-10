@@ -128,6 +128,12 @@ ob_start();
 }
 </style>
 <div class="upcoming-title">🗓️ Upcoming Meetings</div>
+<form method="GET" style="max-width:400px;margin-bottom:1.5rem;display:flex;gap:0.5rem;align-items:center;">
+    <input type="text" name="search" class="form-control" placeholder="Search by meeting name..." value="<?php echo htmlspecialchars($_GET['search'] ?? ''); ?>" style="width:100%;padding:0.7rem 1rem;border-radius:12px;border:1.5px solid #cbd5e1;font-size:1.1rem;">
+    <?php if (!empty($_GET['search'])): ?>
+        <a href="queue-schedule.php" class="btn btn-secondary" style="padding:0.7rem 1.2rem;border-radius:12px;background:#e5e7eb;color:#1e293b;text-decoration:none;font-weight:500;">Clear</a>
+    <?php endif; ?>
+</form>
 <div class="cards-container">
 <?php
 if ($user_role === 'student') {
@@ -173,6 +179,14 @@ if ($user_role === 'student') {
     $stmt = $pdo->prepare($sql);
     $stmt->execute();
     $upcoming_queues = $stmt->fetchAll();
+}
+
+// Apply search filter if set
+$search = isset($_GET['search']) ? trim($_GET['search']) : '';
+if ($search !== '') {
+    $upcoming_queues = array_filter($upcoming_queues, function($queue) use ($search) {
+        return stripos($queue['purpose'], $search) !== false;
+    });
 }
 
 if (empty($upcoming_queues)): ?>

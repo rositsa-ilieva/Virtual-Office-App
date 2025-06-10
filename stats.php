@@ -91,24 +91,37 @@ ob_start();
 }
 </style>
 <div class="stats-title-page">📈 Queue Statistics</div>
-<div class="stats-grid">
 <?php
 $stmt = $pdo->prepare('SELECT * FROM queues WHERE teacher_id = ? ORDER BY start_time DESC');
 $stmt->execute([$user_id]);
 $queues = $stmt->fetchAll();
-if (empty($queues)) {
-    echo '<div style="grid-column:1/-1;text-align:center;color:#64748b;font-size:1.15rem;padding:2.5rem 0;">You have not created any queues yet.</div>';
-} else {
-    foreach ($queues as $queue) {
+$active_queues = array_filter($queues, function($q) { return $q['is_active']; });
+$inactive_queues = array_filter($queues, function($q) { return !$q['is_active']; });
+if (!empty($active_queues)) {
+    echo '<h3 style="margin-bottom:1.2rem;color:#2563eb;">Active Queues</h3>';
+    echo '<div class="stats-grid">';
+    foreach ($active_queues as $queue) {
         echo '<div class="stats-card">';
         echo '<h5><i class="fa fa-layer-group"></i> ' . htmlspecialchars($queue['purpose']) . '</h5>';
-        echo '<div style="color:#64748b;font-size:1.05rem;margin-bottom:1.1rem;"><strong>Start:</strong> ' . date('M d, Y g:i A', strtotime($queue['start_time'])) . '<br><strong>Duration:</strong> ' . $queue['default_duration'] . ' min<br><strong>Max Students:</strong> ' . ($queue['max_students'] ?? '-') . '<br><strong>Status:</strong> ' . ($queue['is_active'] ? '<span class="stats-badge stats-badge-active">Active</span>' : '<span class="stats-badge stats-badge-inactive">Inactive</span>') . '</div>';
+        echo '<div style="color:#64748b;font-size:1.05rem;margin-bottom:1.1rem;"><strong>Start:</strong> ' . date('M d, Y g:i A', strtotime($queue['start_time'])) . '<br><strong>Duration:</strong> ' . $queue['default_duration'] . ' min<br><strong>Max Students:</strong> ' . ($queue['max_students'] ?? '-') . '<br><strong>Status:</strong> <span class="stats-badge stats-badge-active">Active</span></div>';
         echo '<a href="statistics.php?id=' . $queue['id'] . '" class="btn-primary">View Statistics</a>';
         echo '</div>';
     }
+    echo '</div>';
+}
+if (!empty($inactive_queues)) {
+    echo '<h3 style="margin:2.5rem 0 1.2rem 0;color:#64748b;">Inactive Queues</h3>';
+    echo '<div class="stats-grid">';
+    foreach ($inactive_queues as $queue) {
+        echo '<div class="stats-card">';
+        echo '<h5><i class="fa fa-layer-group"></i> ' . htmlspecialchars($queue['purpose']) . '</h5>';
+        echo '<div style="color:#64748b;font-size:1.05rem;margin-bottom:1.1rem;"><strong>Start:</strong> ' . date('M d, Y g:i A', strtotime($queue['start_time'])) . '<br><strong>Duration:</strong> ' . $queue['default_duration'] . ' min<br><strong>Max Students:</strong> ' . ($queue['max_students'] ?? '-') . '<br><strong>Status:</strong> <span class="stats-badge stats-badge-inactive">Inactive</span></div>';
+        echo '<a href="statistics.php?id=' . $queue['id'] . '" class="btn-primary">View Statistics</a>';
+        echo '</div>';
+    }
+    echo '</div>';
 }
 ?>
-</div>
 <?php
 $content = ob_get_clean();
 require 'layout.php';

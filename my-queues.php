@@ -143,7 +143,7 @@ $stmt = $pdo->prepare($sql);
 $stmt->execute([$user_id]);
 $my_queues = $stmt->fetchAll();
 if (empty($my_queues)) {
-    echo '<div style="grid-column:1/-1;text-align:center;color:#64748b;font-size:1.15rem;padding:2.5rem 0;">\uD83D\uDEAB You are not currently in any queues.</div>';
+    echo '<div style="grid-column:1/-1;text-align:center;color:#64748b;font-size:1.15rem;padding:2.5rem 0;">🚫 You are not currently in any queues.</div>';
 } else {
     foreach ($my_queues as $queue) {
         $status = isset($queue['status']) ? strtolower($queue['status']) : 'waiting';
