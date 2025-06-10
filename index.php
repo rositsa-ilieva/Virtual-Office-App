@@ -233,7 +233,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mark_all_read'])) {
 <body>
     <?php renderSidebar($user_role, $activePage); ?>
     <div class="main-content">
-        <h1 class="mb-4">Welcome, <?php echo htmlspecialchars($user['name'] ?? $user['email']); ?>!</h1>
         <?php if ($user_role === 'student'): ?>
             <style>
                 body {
