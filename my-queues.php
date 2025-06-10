@@ -164,7 +164,8 @@ if (empty($my_queues)) {
         echo '<div class="myqueue-card-position"><i class="fa fa-list-ol"></i> Position: ' . htmlspecialchars($queue['my_position']) . '</div>';
         echo '<div class="myqueue-card-status ' . $statusClass . '">' . $statusIcon . ' ' . ucfirst(str_replace('_', ' ', $status)) . '</div>';
         echo '<div class="myqueue-card-actions">';
-        echo '<a href="queue-members.php?id=' . $queue['queue_id'] . '" class="btn-primary"><i class="fa fa-users"></i> View Queue Members</a>';
+        echo '<a href="queue-members.php?id=' . $queue['queue_id'] . '" class="btn-primary" style="margin-right:0.7rem;"><i class="fa fa-users"></i> View Queue Members</a>';
+        echo '<button class="btn-primary" style="background:#10b981;" onclick="showMessageModal(' . $queue['queue_id'] . ', \'' . htmlspecialchars(addslashes($queue['purpose'])) . '\')"><i class="fa fa-paper-plane"></i> Send Message to Teacher</button>';
         echo '</div>';
         echo '</div>';
     }
@@ -257,13 +258,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['teacher_message']) &&
     $queue_id = (int)$_POST['queue_id'];
     if ($message !== '' && $queue_id) {
         // Get teacher id for this queue
-        $stmt = $pdo->prepare('SELECT teacher_id FROM queues WHERE id = ?');
+        $stmt = $pdo->prepare('SELECT teacher_id, purpose FROM queues WHERE id = ?');
         $stmt->execute([$queue_id]);
-        $teacher_id = $stmt->fetchColumn();
-        // Insert into notifications (or messages table if you have one)
+        $queue_info = $stmt->fetch();
+        $teacher_id = $queue_info['teacher_id'];
+        $meeting_name = $queue_info['purpose'];
+        // Get student info
+        $stmt = $pdo->prepare('SELECT name, faculty_number, specialization FROM users WHERE id = ?');
+        $stmt->execute([$user_id]);
+        $student = $stmt->fetch();
+        $student_name = $student['name'] ?? '';
+        $student_fn = $student['faculty_number'] ?? '';
+        $student_spec = $student['specialization'] ?? '';
+        // Compose notification message
+        $full_message = "Message from $student_name (FN: $student_fn, Specialization: $student_spec) about meeting '$meeting_name':\n$message";
+        // Insert into notifications
         $stmt = $pdo->prepare('INSERT INTO notifications (user_id, type, message, related_queue_id, related_user_id) VALUES (?, "student_message", ?, ?, ?)');
-        $stmt->execute([$teacher_id, $message, $queue_id, $user_id]);
-        echo '<div class="alert alert-success">Message sent to teacher!</div>';
+        $stmt->execute([$teacher_id, $full_message, $queue_id, $user_id]);
+        echo '<script>window.addEventListener("DOMContentLoaded",function(){ showToast("Message sent to teacher!"); });</script>';
     }
 }
+?>
+<div id="toast" style="display:none;position:fixed;top:32px;left:50%;transform:translateX(-50%);background:#22c55e;color:#fff;padding:1.1rem 2.2rem;font-size:1.15rem;font-weight:600;border-radius:16px;box-shadow:0 4px 24px rgba(34,197,94,0.13);z-index:2000;transition:opacity 0.4s;opacity:0;">
+    Message sent to teacher!
+</div>
+<script>
+function showToast(msg) {
+    var toast = document.getElementById('toast');
+    toast.textContent = msg;
+    toast.style.display = 'block';
+    toast.style.opacity = '1';
+    setTimeout(function(){ toast.style.opacity = '0'; }, 2600);
+    setTimeout(function(){ toast.style.display = 'none'; }, 3000);
+}
+</script> 
 ?> 

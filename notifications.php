@@ -383,6 +383,37 @@ document.addEventListener('DOMContentLoaded', function() {
                 <div class="notifications-group-title"><?php echo htmlspecialchars($groupLabel); ?></div>
                 <?php foreach ($groupList as $notification): ?>
                 <div class="col-12">
+                    <?php if ($notification['type'] === 'student_message'): ?>
+                    <div class="notification-card" style="background: #f4f8ff; border-radius: 20px; box-shadow: 0 4px 24px rgba(34,197,94,0.07), 0 1.5px 6px rgba(99,102,241,0.08); padding: 2rem 2.2rem 1.5rem 2.2rem; margin-bottom: 2rem; display: flex; flex-direction: column; gap: 1.1rem; position: relative; min-height: 140px;">
+                        <form method="POST" style="position:absolute;top:0;right:0;z-index:2;">
+                            <input type="hidden" name="delete_notification" value="<?php echo $notification['id']; ?>">
+                            <button type="submit" class="notification-delete-btn" title="Delete notification">&times;</button>
+                        </form>
+                        <div style="display:flex;align-items:center;gap:1.1rem;margin-bottom:0.2rem;">
+                            <span style="font-size:1.5rem;">🔔</span>
+                            <span style="font-size:1.18rem;font-weight:700;color:#1e293b;">Notification</span>
+                        </div>
+                        <div style="display:flex;align-items:center;gap:1.1rem;margin-bottom:0.2rem;">
+                            <span style="font-size:1.15rem;">📚</span>
+                            <span style="font-size:1.08rem;font-weight:600;color:#2563eb;"><?php echo htmlspecialchars($notification['queue_purpose']); ?></span>
+                            <?php if ($notification['queue_start_time']): ?>
+                                <span style="font-size:1.01rem;color:#64748b;margin-left:1.2em;">🕒 <?php echo date('M d, g:i A', strtotime($notification['queue_start_time'])); ?></span>
+                            <?php endif; ?>
+                        </div>
+                        <div style="background:#e0e7ff;border-radius:14px;padding:1.1rem 1.3rem;margin:0.7rem 0 0.5rem 0;">
+                            <div style="font-size:1.08rem;font-weight:600;color:#334155;margin-bottom:0.5rem;">📨 Message:</div>
+                            <div style="font-size:1.07rem;color:#1e293b;white-space:pre-line;"><?php echo nl2br(htmlspecialchars(preg_replace('/^Message from .+? about meeting .+?:\\n?/s', '', $notification['message']))); ?></div>
+                        </div>
+                        <div style="margin-top:0.7rem;padding:0.8rem 1.1rem 0.7rem 1.1rem;background:#f1f5f9;border-radius:12px;font-size:1.01rem;color:#334155;">
+                            <div style="margin-bottom:0.2rem;"><span style="font-size:1.1em;">🧑‍💼</span> <b>From:</b> <?php echo htmlspecialchars(extractSenderDetail($notification['message'], 'name')); ?></div>
+                            <div style="margin-bottom:0.2rem;"><span style="font-size:1.1em;">🆔</span> <b>Faculty Number:</b> <?php echo htmlspecialchars(extractSenderDetail($notification['message'], 'fn')); ?></div>
+                            <div><span style="font-size:1.1em;">🎓</span> <b>Specialization:</b> <?php echo htmlspecialchars(extractSenderDetail($notification['message'], 'spec')); ?></div>
+                        </div>
+                        <div class="notification-timestamp" style="position:absolute;right:2.2rem;bottom:1.2rem;background:rgba(255,255,255,0.7);padding:2px 10px;border-radius:8px;">
+                            <?php echo date('g:i A', strtotime($notification['created_at'])); ?>
+                        </div>
+                    </div>
+                    <?php else: ?>
                     <div class="notification-card" data-id="<?php echo $notification['id']; ?>">
                         <form method="POST" style="position:absolute;top:0;right:0;z-index:2;">
                             <input type="hidden" name="delete_notification" value="<?php echo $notification['id']; ?>">
@@ -425,6 +456,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             <?php echo date('g:i A', strtotime($notification['created_at'])); ?>
                         </div>
                     </div>
+                    <?php endif; ?>
                 </div>
                 <?php endforeach; ?>
             <?php endforeach;
@@ -478,4 +510,17 @@ document.addEventListener('DOMContentLoaded', function() {
 <?php
 $content = ob_get_clean();
 require 'layout.php';
+?>
+
+<?php
+// Helper function to extract sender details from the message
+function extractSenderDetail($msg, $type) {
+    // Message from NAME (FN: FACULTY_NUMBER, Specialization: SPECIALIZATION) about meeting ...
+    if (preg_match('/Message from (.*?) \(FN: (.*?), Specialization: (.*?)\) about meeting/', $msg, $m)) {
+        if ($type === 'name') return $m[1];
+        if ($type === 'fn') return $m[2];
+        if ($type === 'spec') return $m[3];
+    }
+    return '';
+}
 ?> 
