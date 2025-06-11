@@ -1,5 +1,5 @@
 <?php
-require_once 'db.php';
+require_once 'config.php';
 $queue_id = $_GET['queue_id'] ?? 0;
 $stmt = $pdo->prepare("SELECT qe.position, u.name as student_name, qe.status, qe.estimated_start_time
                        FROM queue_entries qe

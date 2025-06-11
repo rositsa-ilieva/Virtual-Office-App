@@ -1,6 +1,6 @@
 <?php
 session_start();
-require_once 'db.php';
+require_once 'config.php';
 
 if (isset($_SESSION['user_id'])) {
     header('Location: index.php');
@@ -24,15 +24,24 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $stmt->execute([$email]);
         $user = $stmt->fetch();
 
-        if ($user && password_verify($password, $user['password'])) {
-            $_SESSION['user_id'] = $user['id'];
-            $_SESSION['user_name'] = $user['name'];
-            $_SESSION['user_role'] = $user['role'];
-            header('Location: index.php');
-            exit();
-        } else {
-            $error = 'Invalid email or password';
+        if ($user) {
+            // Check if password is hashed (starts with $2y$)
+            if (strpos($user['password'], '$2y$') === 0) {
+                $valid = password_verify($password, $user['password']);
+            } else {
+                // Plain text password comparison
+                $valid = ($password === $user['password']);
+            }
+
+            if ($valid) {
+                $_SESSION['user_id'] = $user['id'];
+                $_SESSION['user_name'] = $user['name'];
+                $_SESSION['user_role'] = $user['role'];
+                header('Location: index.php');
+                exit();
+            }
         }
+        $error = 'Invalid email or password';
     }
 }
 ?>

@@ -1,6 +1,6 @@
 <?php
 session_start();
-require_once 'db.php';
+require_once 'config.php';
 
 // Check if user is logged in and is a teacher
 if (!isset($_SESSION['user_id'])) {
