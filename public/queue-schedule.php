@@ -11,130 +11,25 @@ $user = $stmt->fetch();
 
 ob_start();
 ?>
-<style>
-.upcoming-title {
-    font-size: 2rem;
-    font-weight: 700;
-    color: #1e293b;
-    text-align: left;
-    margin: 2.5rem 0 2rem 0;
-    letter-spacing: 0.01em;
-    display: flex;
-    align-items: center;
-    gap: 0.7rem;
-}
-.upcoming-cards {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
-    gap: 2.2rem;
-    width: 100%;
-    max-width: 980px;
-    margin: 0 auto 2.5rem auto;
-    justify-content: center;
-}
-.upcoming-card {
-    background: linear-gradient(120deg, #f8fafc 60%, #e0e7ff 100%);
-    border-radius: 20px;
-    box-shadow: 0 8px 32px rgba(30,41,59,0.13), 0 1.5px 6px rgba(99,102,241,0.08);
-    padding: 2.2rem 1.7rem 1.7rem 1.7rem;
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    text-align: left;
-    transition: box-shadow 0.22s, transform 0.22s;
-    position: relative;
-}
-.upcoming-card:hover {
-    box-shadow: 0 12px 40px rgba(99,102,241,0.18), 0 2px 12px rgba(99,102,241,0.10);
-    transform: translateY(-4px) scale(1.025);
-}
-.upcoming-card-title {
-    font-size: 1.18rem;
-    font-weight: 700;
-    color: #1e293b;
-    margin-bottom: 0.3rem;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-.upcoming-card-queue {
-    font-size: 1.05rem;
-    color: #6366f1;
-    margin-bottom: 0.5rem;
-    font-weight: 500;
-    display: flex;
-    align-items: center;
-    gap: 0.4rem;
-}
-.upcoming-card-time {
-    font-size: 1.04rem;
-    color: #334155;
-    margin-bottom: 0.5rem;
-    display: flex;
-    align-items: center;
-    gap: 0.4rem;
-}
-.upcoming-card-status {
-    font-size: 1.01rem;
-    font-weight: 600;
-    color: #2563eb;
-    margin-bottom: 1.1rem;
-    display: flex;
-    align-items: center;
-    gap: 0.4rem;
-}
-.upcoming-card-actions {
-    margin-top: 0.7rem;
-    display: flex;
-    gap: 0.7rem;
-    flex-wrap: wrap;
-}
-.btn-primary {
-    padding: 0.7rem 1.5rem;
-    border: none;
-    border-radius: 14px;
-    background: linear-gradient(90deg, #6366f1 0%, #2563eb 100%);
-    color: #fff;
-    font-size: 1.1rem;
-    font-weight: 600;
-    box-shadow: 0 2px 8px rgba(99,102,241,0.08);
-    transition: background 0.2s, transform 0.15s, box-shadow 0.18s;
-    cursor: pointer;
-}
-.btn-primary:hover, .btn-primary:focus {
-    background: linear-gradient(90deg, #2563eb 0%, #6366f1 100%);
-    transform: translateY(-2px) scale(1.03);
-    box-shadow: 0 4px 16px rgba(99,102,241,0.13);
-}
-@media (max-width: 900px) {
-    .upcoming-cards { grid-template-columns: 1fr; }
-}
-@media (max-width: 600px) {
-    .upcoming-title { font-size: 1.3rem; margin: 1.2rem 0 1rem 0; }
-    .upcoming-cards { gap: 1.2rem; }
-    .upcoming-card { padding: 1.2rem 0.7rem; }
-}
-.cards-container {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 24px;
-  margin-bottom: 2.5rem;
-}
-@media (max-width: 900px) {
-  .cards-container { grid-template-columns: repeat(2, 1fr); }
-}
-@media (max-width: 600px) {
-  .cards-container { grid-template-columns: 1fr; }
-}
-</style>
-<div class="upcoming-title">🗓️ Upcoming Meetings</div>
-<form method="GET" style="max-width:400px;margin-bottom:1.5rem;display:flex;gap:0.5rem;align-items:center;">
-    <input type="text" name="search" class="form-control" placeholder="Search by meeting name..." value="<?php echo htmlspecialchars($_GET['search'] ?? ''); ?>" style="width:100%;padding:0.7rem 1rem;border-radius:12px;border:1.5px solid #cbd5e1;font-size:1.1rem;">
-    <?php if (!empty($_GET['search'])): ?>
-        <a href="queue-schedule.php" class="btn btn-secondary" style="padding:0.7rem 1.2rem;border-radius:12px;background:#e5e7eb;color:#1e293b;text-decoration:none;font-weight:500;">Clear</a>
-    <?php endif; ?>
-</form>
-<div class="cards-container">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Queue Schedule - Virtual Office Queue</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
+    <link href="css/queue-schedule.css" rel="stylesheet">
+</head>
+<body>
+    <div class="upcoming-title">🗓️ Upcoming Meetings</div>
+    <form method="GET" class="search-form">
+        <input type="text" name="search" class="search-input" placeholder="Search by meeting name..." value="<?php echo htmlspecialchars($_GET['search'] ?? ''); ?>">
+        <?php if (!empty($_GET['search'])): ?>
+            <a href="queue-schedule.php" class="clear-button">Clear</a>
+        <?php endif; ?>
+    </form>
+    <div class="cards-container">
 <?php
 if ($user_role === 'student') {
     // For students: only show events not finished by the student and matching specialization/year
@@ -226,5 +121,7 @@ endif; ?>
 </div>
 <?php
 $content = ob_get_clean();
-require 'layout.php';
+require '../src/Includes/layout.php';
 ?> 
+</body>
+</html> 

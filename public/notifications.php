@@ -190,131 +190,8 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 </script>
-<style>
-.notifications-container {
-    max-width: 700px;
-    margin: 0 auto;
-    padding: 2rem 0;
-}
-.notifications-group-title {
-    font-size: 1.08rem;
-    font-weight: 700;
-    color: #6366f1;
-    margin: 2.2rem 0 1.1rem 0;
-    letter-spacing: 0.01em;
-}
-.notification-card {
-    background: linear-gradient(120deg, #f8fafc 60%, #e0e7ff 100%);
-    border-radius: 18px;
-    box-shadow: 0 4px 24px rgba(99,102,241,0.10), 0 1.5px 6px rgba(99,102,241,0.08);
-    padding: 1.5rem 1.7rem 1.2rem 1.7rem;
-    margin-bottom: 1.5rem;
-    display: flex;
-    flex-direction: column;
-    gap: 0.7rem;
-    position: relative;
-    transition: box-shadow 0.18s, transform 0.18s;
-    min-height: 120px;
-}
-.notification-card:hover {
-    box-shadow: 0 8px 32px rgba(99,102,241,0.18), 0 2px 12px rgba(99,102,241,0.10);
-    transform: translateY(-2px) scale(1.01);
-}
-.notification-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 0.2rem;
-}
-.notification-title {
-    font-size: 1.13rem;
-    font-weight: 700;
-    color: #1e293b;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-.notification-icon {
-    font-size: 1.3rem;
-    margin-right: 0.4rem;
-}
-.notification-body {
-    font-size: 1.05rem;
-    color: #334155;
-    margin-bottom: 0.3rem;
-    line-height: 1.6;
-}
-.notification-details {
-    font-size: 0.98rem;
-    color: #6366f1;
-    margin-bottom: 0.2rem;
-    font-weight: 500;
-}
-.notification-timestamp {
-    font-size: 0.97rem;
-    color: #64748b;
-    font-weight: 400;
-    margin-left: 0;
-    margin-top: 0.7rem;
-    white-space: nowrap;
-    position: absolute;
-    right: 1.7rem;
-    bottom: 1.1rem;
-    background: rgba(255,255,255,0.7);
-    padding: 2px 10px;
-    border-radius: 8px;
-}
-.notification-actions {
-    margin-top: 0.5rem;
-    display: flex;
-    gap: 0.7rem;
-    align-items: center;
-}
-.notification-badge {
-    display: inline-block;
-    background: #e0e7ff;
-    color: #6366f1;
-    font-size: 0.93rem;
-    font-weight: 600;
-    border-radius: 8px;
-    padding: 3px 12px;
-    margin-left: 0.5rem;
-}
-.notification-delete-btn {
-    position: absolute;
-    top: 14px;
-    right: 18px;
-    background: none;
-    border: none;
-    color: #64748b;
-    font-size: 1.2rem;
-    cursor: pointer;
-    padding: 2px 6px;
-    border-radius: 50%;
-    transition: background 0.15s;
-    z-index: 2;
-}
-.notification-delete-btn:hover {
-    background: #e0e7ff;
-    color: #ef4444;
-}
-@media (max-width: 600px) {
-    .notifications-container { padding: 0.7rem 0; }
-    .notification-card { padding: 1.1rem 0.6rem; }
-    .notification-timestamp { right: 0.6rem; left: auto; bottom: 0.7rem; }
-}
-.notifications-title {
-    font-size: 2rem;
-    font-weight: 700;
-    color: #1e293b;
-    text-align: left;
-    margin: 2.5rem 0 2rem 0;
-    letter-spacing: 0.01em;
-    display: flex;
-    align-items: center;
-    gap: 0.7rem;
-}
-</style>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+<link rel="stylesheet" href="css/notifications.css">
 <div class="notifications-title">🔔 Notifications</div>
 <div class="notifications-container">
 <div class="mt-4">
@@ -509,7 +386,7 @@ document.addEventListener('DOMContentLoaded', function() {
 <?php endif; ?>
 <?php
 $content = ob_get_clean();
-require 'layout.php';
+require '../src/Includes/layout.php';
 ?>
 
 <?php

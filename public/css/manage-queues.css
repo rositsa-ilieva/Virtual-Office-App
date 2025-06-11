@@ -1,0 +1,141 @@
+.manage-queue-container {
+    max-width: 1100px;
+    margin: 2.5rem auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+.manage-queue-card {
+    background: linear-gradient(120deg, #f8fafc 60%, #e0e7ff 100%);
+    border-radius: 22px;
+    box-shadow: 0 8px 40px rgba(30,41,59,0.13), 0 1.5px 6px rgba(99,102,241,0.08);
+    padding: 2.5rem 2.2rem 2rem 2.2rem;
+    width: 100%;
+    margin-bottom: 2.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+.manage-queue-header {
+    display: flex;
+    align-items: center;
+    gap: 1.1rem;
+    margin-bottom: 1.2rem;
+}
+.manage-queue-header i {
+    font-size: 2.2rem;
+    color: #6366f1;
+    background: #e0e7ff;
+    border-radius: 50%;
+    padding: 0.5rem;
+    box-shadow: 0 2px 8px rgba(99,102,241,0.10);
+}
+.manage-queue-title {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: #1e293b;
+}
+.manage-queue-actions {
+    display: flex;
+    gap: 1.2rem;
+    margin-bottom: 1.5rem;
+}
+.btn-modern {
+    padding: 0.7rem 1.5rem;
+    border: none;
+    border-radius: 14px;
+    background: linear-gradient(90deg, #6366f1 0%, #2563eb 100%);
+    color: #fff;
+    font-size: 1.1rem;
+    font-weight: 600;
+    box-shadow: 0 2px 8px rgba(99,102,241,0.08);
+    transition: background 0.2s, transform 0.15s, box-shadow 0.18s;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-block;
+}
+.btn-modern:hover, .btn-modern:focus {
+    background: linear-gradient(90deg, #2563eb 0%, #6366f1 100%);
+    transform: translateY(-2px) scale(1.03);
+    box-shadow: 0 4px 16px rgba(99,102,241,0.13);
+}
+.table-modern {
+    width: 100%;
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 2px 12px rgba(99,102,241,0.07);
+    overflow: hidden;
+    margin-bottom: 2rem;
+}
+.table-modern th, .table-modern td {
+    padding: 1rem 1.1rem;
+    text-align: center;
+    font-size: 1.05rem;
+}
+.table-modern thead th {
+    background: #e0e7ff;
+    color: #334155;
+    font-weight: 600;
+    border-bottom: 2px solid #cbd5e1;
+}
+.table-modern tbody tr {
+    transition: background 0.15s;
+}
+.table-modern tbody tr:hover {
+    background: #f1f5f9;
+}
+.status-badge {
+    display: inline-block;
+    padding: 0.3em 0.9em;
+    border-radius: 12px;
+    font-size: 0.98em;
+    font-weight: 600;
+    color: #fff;
+}
+.status-waiting { background: #6366f1; }
+.status-in_meeting { background: #2563eb; }
+.status-done { background: #10b981; }
+.status-skipped { background: #f59e42; }
+.status-other { background: #64748b; }
+.manage-queue-title-page {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #1e293b;
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    margin-bottom: 2.2rem;
+    margin-left: 0.2rem;
+}
+.queue-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+    gap: 2.2rem;
+    width: 100%;
+    margin: 0 auto;
+    max-width: 1100px;
+}
+.queue-card {
+    background: linear-gradient(120deg, #f8fafc 60%, #e0e7ff 100%);
+    border-radius: 22px;
+    box-shadow: 0 8px 40px rgba(30,41,59,0.13), 0 1.5px 6px rgba(99,102,241,0.08);
+    padding: 2.2rem 1.7rem 1.7rem 1.7rem;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    min-width: 0;
+}
+.queue-card .manage-queue-header {
+    margin-bottom: 1.1rem;
+}
+.queue-card .manage-queue-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+}
+.queue-card .status-badge {
+    margin-bottom: 0.7rem;
+}
+.queue-card .btn-modern {
+    margin-bottom: 0.7rem;
+} 

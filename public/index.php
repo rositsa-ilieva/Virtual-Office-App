@@ -219,142 +219,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mark_all_read'])) {
     <title>Dashboard - Virtual Office Queue</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
-    <link href="style.css?v=2" rel="stylesheet">
-    <style>
-        body { background: #f7f9fb; }
-        .sidebar { width: 260px; min-height: 100vh; position: fixed; }
-        .main-content { margin-left: 260px; padding: 2rem; }
-        @media (max-width: 991px) {
-            .sidebar { position: static; width: 100%; min-height: auto; }
-            .main-content { margin-left: 0; }
-        }
-    </style>
+    <link href="css/styles.css" rel="stylesheet">
+    <link href="css/dashboard.css" rel="stylesheet">
 </head>
 <body>
     <?php renderSidebar($user_role, $activePage); ?>
     <div class="main-content">
         <?php if ($user_role === 'student'): ?>
-            <style>
-                body {
-                    background: linear-gradient(135deg, #e0e7ff 0%, #f8fafc 100%);
-                    min-height: 100vh;
-                    font-family: 'Segoe UI', 'Roboto', Arial, sans-serif;
-                }
-                .student-dashboard-main {
-                    min-height: 100vh;
-                    display: flex;
-                    flex-direction: column;
-                    align-items: center;
-                    justify-content: flex-start;
-                    padding: 3rem 0 2rem 0;
-                }
-                .student-dashboard-profile {
-                    display: flex;
-                    align-items: center;
-                    gap: 1.2rem;
-                    margin-bottom: 2.2rem;
-                }
-                .student-dashboard-avatar {
-                    width: 64px;
-                    height: 64px;
-                    border-radius: 50%;
-                    background: linear-gradient(135deg, #6366f1 60%, #a5b4fc 100%);
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    font-size: 2.2rem;
-                    color: #fff;
-                    box-shadow: 0 2px 12px rgba(99,102,241,0.13);
-                }
-                .student-dashboard-profile-info {
-                    display: flex;
-                    flex-direction: column;
-                }
-                .student-dashboard-welcome {
-                    font-size: 1.45rem;
-                    font-weight: 700;
-                    color: #1e293b;
-                }
-                .student-dashboard-section-title {
-                    font-size: 1.25rem;
-                    font-weight: 600;
-                    color: #334155;
-                    margin-bottom: 1.2rem;
-                    margin-top: 0.5rem;
-                    letter-spacing: 0.01em;
-                    text-align: center;
-                }
-                .student-dashboard-cards {
-                    display: grid;
-                    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-                    gap: 2.2rem;
-                    width: 100%;
-                    max-width: 980px;
-                    margin-bottom: 2.5rem;
-                }
-                .student-dashboard-card {
-                    background: linear-gradient(120deg, #f8fafc 60%, #e0e7ff 100%);
-                    border-radius: 20px;
-                    box-shadow: 0 8px 32px rgba(30,41,59,0.13), 0 1.5px 6px rgba(99,102,241,0.08);
-                    padding: 2.2rem 1.7rem 1.7rem 1.7rem;
-                    display: flex;
-                    flex-direction: column;
-                    align-items: center;
-                    text-align: center;
-                    transition: box-shadow 0.22s, transform 0.22s;
-                    position: relative;
-                }
-                .student-dashboard-card:hover {
-                    box-shadow: 0 12px 40px rgba(99,102,241,0.18), 0 2px 12px rgba(99,102,241,0.10);
-                    transform: translateY(-4px) scale(1.025);
-                }
-                .student-dashboard-card .student-dashboard-icon {
-                    font-size: 2.3rem;
-                    color: #6366f1;
-                    margin-bottom: 1.1rem;
-                    transition: color 0.18s, transform 0.18s;
-                }
-                .student-dashboard-card:hover .student-dashboard-icon {
-                    color: #2563eb;
-                    transform: scale(1.12) rotate(-6deg);
-                }
-                .student-dashboard-action-title {
-                    font-size: 1.18rem;
-                    font-weight: 600;
-                    margin-bottom: 0.3rem;
-                    color: #1e293b;
-                }
-                .student-dashboard-action-desc {
-                    color: #64748b;
-                    font-size: 1.04rem;
-                    margin-bottom: 1.2rem;
-                }
-                .btn-primary {
-                    width: 100%;
-                    padding: 0.8rem 0;
-                    border: none;
-                    border-radius: 14px;
-                    background: linear-gradient(90deg, #6366f1 0%, #2563eb 100%);
-                    color: #fff;
-                    font-size: 1.1rem;
-                    font-weight: 600;
-                    box-shadow: 0 2px 8px rgba(99,102,241,0.08);
-                    transition: background 0.2s, transform 0.15s, box-shadow 0.18s;
-                    cursor: pointer;
-                }
-                .btn-primary:hover, .btn-primary:focus {
-                    background: linear-gradient(90deg, #2563eb 0%, #6366f1 100%);
-                    transform: translateY(-2px) scale(1.03);
-                    box-shadow: 0 4px 16px rgba(99,102,241,0.13);
-                }
-                @media (max-width: 900px) {
-                    .student-dashboard-cards { grid-template-columns: 1fr; }
-                }
-                @media (max-width: 600px) {
-                    .student-dashboard-main { padding: 1.2rem 0.2rem; }
-                    .student-dashboard-cards { gap: 1.2rem; }
-                }
-            </style>
             <div class="student-dashboard-main">
               <div class="student-dashboard-profile">
                 <div class="student-dashboard-avatar"><i class="fa fa-user-graduate"></i></div>
@@ -385,131 +256,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mark_all_read'])) {
                 </div>
             </div>
         <?php elseif ($user_role === 'teacher'): ?>
-            <style>
-                body {
-                    background: linear-gradient(135deg, #e0e7ff 0%, #f8fafc 100%);
-                    min-height: 100vh;
-                    font-family: 'Segoe UI', 'Roboto', Arial, sans-serif;
-                }
-                .dashboard-main {
-                    min-height: 100vh;
-                    display: flex;
-                    flex-direction: column;
-                    align-items: center;
-                    justify-content: flex-start;
-                    padding: 3rem 0 2rem 0;
-                }
-                .dashboard-profile {
-                    display: flex;
-                    align-items: center;
-                    gap: 1.2rem;
-                    margin-bottom: 2.2rem;
-                }
-                .dashboard-avatar {
-                    width: 64px;
-                    height: 64px;
-                    border-radius: 50%;
-                    background: linear-gradient(135deg, #6366f1 60%, #a5b4fc 100%);
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    font-size: 2.2rem;
-                    color: #fff;
-                    box-shadow: 0 2px 12px rgba(99,102,241,0.13);
-                }
-                .dashboard-profile-info {
-                    display: flex;
-                    flex-direction: column;
-                }
-                .dashboard-welcome {
-                    font-size: 1.45rem;
-                    font-weight: 700;
-                    color: #1e293b;
-                }
-                .dashboard-role {
-                    color: #6366f1;
-                    font-size: 1.05rem;
-                    font-weight: 500;
-                }
-                .dashboard-section-title {
-                    font-size: 1.25rem;
-                    font-weight: 600;
-                    color: #334155;
-                    margin-bottom: 1.2rem;
-                    margin-top: 0.5rem;
-                    letter-spacing: 0.01em;
-                }
-                .dashboard-cards {
-                    display: grid;
-                    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-                    gap: 2.2rem;
-                    width: 100%;
-                    max-width: 980px;
-                    margin-bottom: 2.5rem;
-                }
-                .dashboard-card {
-                    background: linear-gradient(120deg, #f8fafc 60%, #e0e7ff 100%);
-                    border-radius: 20px;
-                    box-shadow: 0 8px 32px rgba(30,41,59,0.13), 0 1.5px 6px rgba(99,102,241,0.08);
-                    padding: 2.2rem 1.7rem 1.7rem 1.7rem;
-                    display: flex;
-                    flex-direction: column;
-                    align-items: center;
-                    text-align: center;
-                    transition: box-shadow 0.22s, transform 0.22s;
-                    position: relative;
-                }
-                .dashboard-card:hover {
-                    box-shadow: 0 12px 40px rgba(99,102,241,0.18), 0 2px 12px rgba(99,102,241,0.10);
-                    transform: translateY(-4px) scale(1.025);
-                }
-                .dashboard-card .dashboard-action-icon {
-                    font-size: 2.3rem;
-                    color: #6366f1;
-                    margin-bottom: 1.1rem;
-                    transition: color 0.18s, transform 0.18s;
-                }
-                .dashboard-card:hover .dashboard-action-icon {
-                    color: #2563eb;
-                    transform: scale(1.12) rotate(-6deg);
-                }
-                .dashboard-action-title {
-                    font-size: 1.18rem;
-                    font-weight: 600;
-                    margin-bottom: 0.3rem;
-                    color: #1e293b;
-                }
-                .dashboard-action-desc {
-                    color: #64748b;
-                    font-size: 1.04rem;
-                    margin-bottom: 1.2rem;
-                }
-                .btn-primary {
-                    width: 100%;
-                    padding: 0.8rem 0;
-                    border: none;
-                    border-radius: 14px;
-                    background: linear-gradient(90deg, #6366f1 0%, #2563eb 100%);
-                    color: #fff;
-                    font-size: 1.1rem;
-                    font-weight: 600;
-                    box-shadow: 0 2px 8px rgba(99,102,241,0.08);
-                    transition: background 0.2s, transform 0.15s, box-shadow 0.18s;
-                    cursor: pointer;
-                }
-                .btn-primary:hover, .btn-primary:focus {
-                    background: linear-gradient(90deg, #2563eb 0%, #6366f1 100%);
-                    transform: translateY(-2px) scale(1.03);
-                    box-shadow: 0 4px 16px rgba(99,102,241,0.13);
-                }
-                @media (max-width: 900px) {
-                    .dashboard-cards { grid-template-columns: 1fr; }
-                }
-                @media (max-width: 600px) {
-                    .dashboard-main { padding: 1.2rem 0.2rem; }
-                    .dashboard-cards { gap: 1.2rem; }
-                }
-            </style>
             <div class="dashboard-main">
               <div class="dashboard-profile">
                 <div class="dashboard-avatar"><i class="fa fa-chalkboard-teacher"></i></div>
@@ -540,7 +286,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mark_all_read'])) {
                     <div class="card p-4 shadow-sm">
                         <h5>Admin Panel</h5>
                         <p>Manage users, queues, and system settings.</p>
-                        <a href="admin.php" class="btn btn-primary">Go to Admin Panel</a>
+                        <a href="../src/Admin/admin.php" class="btn btn-primary">Go to Admin Panel</a>
                     </div>
                 </div>
             </div>

@@ -7,6 +7,7 @@ DROP TABLE IF EXISTS notifications;
 DROP TABLE IF EXISTS queue_entries;
 DROP TABLE IF EXISTS queue_statistics;
 DROP TABLE IF EXISTS swap_requests;
+DROP TABLE IF EXISTS time_slots;
 DROP TABLE IF EXISTS queues;
 DROP TABLE IF EXISTS users;
 
@@ -42,7 +43,19 @@ CREATE TABLE IF NOT EXISTS queues (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     target_specialization VARCHAR(50) DEFAULT 'All',
     target_year VARCHAR(20) DEFAULT 'All',
+    specialization_year_map TEXT,
     FOREIGN KEY (teacher_id) REFERENCES users(id)
+);
+
+-- Create time_slots table
+CREATE TABLE IF NOT EXISTS time_slots (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    queue_id INT NOT NULL,
+    start_time DATETIME NOT NULL,
+    end_time DATETIME NOT NULL,
+    is_available BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (queue_id) REFERENCES queues(id) ON DELETE CASCADE
 );
 
 -- Create queue_entries table

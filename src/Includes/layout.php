@@ -112,53 +112,7 @@ function renderSidebar($role, $activePage, $user) {
     <title><?php echo ucfirst($activePage); ?> - Virtual Office Queue</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
-    <link href="style.css?v=2" rel="stylesheet">
-    <style>
-        body { 
-            background: #f7f9fb;
-            min-height: 100vh;
-            display: flex;
-        }
-        .sidebar { 
-            width: 260px; 
-            min-height: 100vh; 
-            position: fixed;
-            left: 0;
-            top: 0;
-            z-index: 1000;
-        }
-        .main-content { 
-            margin-left: 260px; 
-            padding: 2rem;
-            flex: 1;
-        }
-        @media (max-width: 991px) {
-            .sidebar { 
-                position: static; 
-                width: 100%; 
-                min-height: auto; 
-            }
-            .main-content { 
-                margin-left: 0; 
-            }
-        }
-        .nav-link {
-            color: #1e293b;
-            padding: 0.75rem 1rem;
-            border-radius: 0.5rem;
-            transition: all 0.2s;
-        }
-        .nav-link:hover {
-            background: #f1f5f9;
-        }
-        .nav-link.active {
-            background: #2563eb;
-            color: white;
-        }
-        .nav-link.active:hover {
-            background: #1d4ed8;
-        }
-    </style>
+    <link href="css/styles.css" rel="stylesheet">
 </head>
 <body>
     <?php renderSidebar($user_role, $activePage, $user); ?>

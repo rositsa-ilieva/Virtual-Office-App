@@ -12,6 +12,7 @@ $user = $stmt->fetch();
 ob_start();
 ?>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+<link rel="stylesheet" href="css/my-queues.css">
 <style>
 .myqueues-title {
     font-size: 2rem;
@@ -248,7 +249,7 @@ document.querySelectorAll('.copy-btn').forEach(function(btn) {
 </style>
 <?php
 $content = ob_get_clean();
-require 'layout.php';
+require '../src/Includes/layout.php';
 ?>
 
 <!-- Handle message send -->

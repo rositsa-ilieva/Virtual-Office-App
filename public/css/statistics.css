@@ -1,0 +1,70 @@
+.stats-title-page {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #1e293b;
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    margin-bottom: 2.2rem;
+    margin-left: 0.2rem;
+}
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+    gap: 2.2rem;
+    width: 100%;
+    margin: 0 auto 2.5rem auto;
+    max-width: 1100px;
+}
+.stats-card {
+    background: linear-gradient(120deg, #f8fafc 60%, #e0e7ff 100%);
+    border-radius: 22px;
+    box-shadow: 0 8px 40px rgba(30,41,59,0.13), 0 1.5px 6px rgba(99,102,241,0.08);
+    padding: 2.2rem 1.7rem 1.7rem 1.7rem;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    min-width: 0;
+}
+.stats-card h5 {
+    font-size: 1.18rem;
+    font-weight: 700;
+    color: #334155;
+    margin-bottom: 1.1rem;
+}
+.stats-badge {
+    display: inline-block;
+    padding: 0.3em 0.9em;
+    border-radius: 12px;
+    font-size: 0.98em;
+    font-weight: 600;
+    color: #fff;
+    margin-left: 0.5em;
+}
+.stats-badge-waiting { background: #6366f1; }
+.stats-badge-in_meeting { background: #2563eb; }
+.stats-badge-done { background: #10b981; }
+.stats-badge-skipped { background: #f59e42; }
+.stats-badge-other { background: #64748b; }
+.stats-pie-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.2rem;
+    margin-top: 1.2rem;
+    font-size: 1.05rem;
+    align-items: center;
+}
+.stats-pie-legend span {
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+}
+.stats-pie-legend .legend-dot {
+    width: 1.1em;
+    height: 1.1em;
+    border-radius: 50%;
+    display: inline-block;
+}
+@media (max-width: 700px) {
+    .stats-grid { grid-template-columns: 1fr; }
+} 

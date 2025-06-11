@@ -16,6 +16,8 @@ $queue_id = isset($_GET['queue_id']) ? intval($_GET['queue_id']) : null;
 
 ob_start();
 ?>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+<link rel="stylesheet" href="css/manage-queues.css">
 <style>
 .manage-queue-container {
     max-width: 1100px;
@@ -333,5 +335,5 @@ if ($queue_id) {
 ?>
 <?php
 $content = ob_get_clean();
-require 'layout.php';
+require '../src/Includes/layout.php';
 ?> 
