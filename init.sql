@@ -21,7 +21,9 @@ CREATE TABLE IF NOT EXISTS users (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     faculty_number VARCHAR(100) DEFAULT NULL,
     specialization VARCHAR(100) DEFAULT NULL,
-    year_of_study VARCHAR(20) DEFAULT NULL
+    year_of_study VARCHAR(20) DEFAULT NULL,
+    teacher_role VARCHAR(100) DEFAULT NULL,
+    subjects TEXT
 );
 
 -- Create queues table
@@ -117,9 +119,9 @@ CREATE TABLE IF NOT EXISTS swap_requests (
 );
 
 -- Insert test users
-INSERT INTO users (name, email, password, role) VALUES
-('Maria Ivanova', 'maria@gmail.com', '12345678', 'teacher'),
-('Peter Petrov', 'peter@gmail.com', '12345678', 'teacher');
+INSERT INTO users (name, email, password, role, teacher_role, subjects) VALUES
+('Maria Ivanova', 'maria@gmail.com', '12345678', 'teacher', 'Professor', 'Mathematics, Computer Science'),
+('Peter Petrov', 'peter@gmail.com', '12345678', 'teacher', 'Assistant Professor', 'Physics, Informatics');
 
 INSERT INTO users (name, email, password, role, faculty_number, specialization, year_of_study) VALUES
 ('Ivan Georgiev', 'ivan@gmail.com', '12345678', 'student', '12345', 'Computer Science', '3'),
@@ -140,12 +142,12 @@ INSERT INTO queues (teacher_id, purpose, description, meeting_link, access_code,
 -- Future meeting (tomorrow)
 INSERT INTO queues (teacher_id, purpose, description, meeting_link, access_code, start_time, end_time, is_active) VALUES
 (2, 'Web Development - Future Session', 'JavaScript and React fundamentals', 'https://meet.google.com/future123', 'future123',
- DATE_ADD(NOW(), INTERVAL 1 DAY), DATE_ADD(NOW(), INTERVAL 1 DAY + 2 HOUR), TRUE);
+ DATE_ADD(NOW(), INTERVAL 1 DAY), DATE_ADD(DATE_ADD(NOW(), INTERVAL 1 DAY), INTERVAL 2 HOUR), TRUE);
 
 -- Add queue entries for past meeting
 INSERT INTO queue_entries (queue_id, student_id, position, status, comment, started_at, ended_at) VALUES
-(1, 3, 1, 'done', 'SQL optimization questions', DATE_SUB(NOW(), INTERVAL 1 DAY + 1 HOUR), DATE_SUB(NOW(), INTERVAL 1 DAY + 1 HOUR + 30 MINUTE)),
-(1, 4, 2, 'done', 'Database normalization help', DATE_SUB(NOW(), INTERVAL 1 DAY + 1 HOUR + 30 MINUTE), DATE_SUB(NOW(), INTERVAL 1 DAY + 2 HOUR));
+(1, 3, 1, 'done', 'SQL optimization questions', DATE_SUB(NOW(), INTERVAL 25 HOUR), DATE_SUB(NOW(), INTERVAL 24.5 HOUR)),
+(1, 4, 2, 'done', 'Database normalization help', DATE_SUB(NOW(), INTERVAL 24.5 HOUR), DATE_SUB(NOW(), INTERVAL 24 HOUR));
 
 -- Add queue entries for current meeting
 INSERT INTO queue_entries (queue_id, student_id, position, status, comment) VALUES
