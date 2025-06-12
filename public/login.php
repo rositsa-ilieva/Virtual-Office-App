@@ -56,29 +56,29 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 </head>
 <body>
     <div class="login-outer">
-        <div class="login-card">
-            <div class="login-logo"><i class="fa fa-sign-in-alt"></i></div>
-            <div class="login-title">Sign in to your account</div>
-            <div class="login-subtitle">Virtual Office Queue</div>
-            <?php if (isset($error) && $error): ?>
-                <div class="error"><?php echo htmlspecialchars($error); ?></div>
+      <div class="login-card">
+        <div class="login-logo"><i class="fa fa-sign-in-alt"></i></div>
+        <div class="login-title">Sign in to your account</div>
+        <div class="login-subtitle">Virtual Office Queue</div>
+        <?php if (isset($error) && $error): ?>
+            <div class="error"><?php echo htmlspecialchars($error); ?></div>
             <?php endif; ?>
-            <?php if (isset($success) && $success): ?>
-                <div class="success"><?php echo htmlspecialchars($success); ?></div>
+        <?php if (isset($success) && $success): ?>
+            <div class="success"><?php echo htmlspecialchars($success); ?></div>
             <?php endif; ?>
-            <form method="POST" action="">
-                <div class="form-group">
-                    <span class="input-icon"><i class="fa fa-envelope"></i></span>
-                    <input type="email" id="email" name="email" placeholder="Email" required autofocus>
+        <form method="POST" action="">
+            <div class="form-group">
+                <span class="input-icon"><i class="fa fa-envelope"></i></span>
+                <input type="email" id="email" name="email" placeholder="Email" required autofocus>
                 </div>
-                <div class="form-group">
-                    <span class="input-icon"><i class="fa fa-lock"></i></span>
-                    <input type="password" id="password" name="password" placeholder="Password" required>
-                </div>
-                <button type="submit" class="btn-primary">Login</button>
-            </form>
-            <div class="form-footer">
-                <span>Don't have an account?</span> <a href="register.php" class="btn-secondary">Register</a>
+            <div class="form-group">
+                <span class="input-icon"><i class="fa fa-lock"></i></span>
+                <input type="password" id="password" name="password" placeholder="Password" required>
+            </div>
+            <button type="submit" class="btn-primary">Login</button>
+        </form>
+        <div class="form-footer">
+            <span>Don't have an account?</span> <a href="register.php" class="btn-secondary">Register</a>
             </div>
         </div>
     </div>

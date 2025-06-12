@@ -71,76 +71,76 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 </head>
 <body>
     <div class="register-outer">
-        <div class="register-card">
+      <div class="register-card">
             <div class="register-logo">
                 <i class="fa fa-user-plus"></i>
             </div>
             <div class="register-title">Create Account</div>
             <div class="register-subtitle">Join the virtual office queue system</div>
-            <?php if ($error): ?>
-                <div class="error"><?php echo htmlspecialchars($error); ?></div>
-            <?php endif; ?>
-            <?php if ($success): ?>
-                <div class="success"><?php echo htmlspecialchars($success); ?></div>
-            <?php endif; ?>
-            <form method="POST" action="">
-                <div class="form-group">
-                    <span class="input-icon"><i class="fa fa-user"></i></span>
+        <?php if ($error): ?>
+            <div class="error"><?php echo htmlspecialchars($error); ?></div>
+        <?php endif; ?>
+        <?php if ($success): ?>
+            <div class="success"><?php echo htmlspecialchars($success); ?></div>
+        <?php endif; ?>
+        <form method="POST" action="">
+            <div class="form-group">
+                <span class="input-icon"><i class="fa fa-user"></i></span>
                     <input type="text" name="name" placeholder="Full Name" required>
-                </div>
-                <div class="form-group">
-                    <span class="input-icon"><i class="fa fa-envelope"></i></span>
+            </div>
+            <div class="form-group">
+                <span class="input-icon"><i class="fa fa-envelope"></i></span>
                     <input type="email" name="email" placeholder="Email Address" required>
-                </div>
-                <div class="form-group">
-                    <span class="input-icon"><i class="fa fa-lock"></i></span>
+            </div>
+            <div class="form-group">
+                <span class="input-icon"><i class="fa fa-lock"></i></span>
                     <input type="password" name="password" placeholder="Password" required>
-                </div>
-                <div class="form-group">
-                    <span class="input-icon"><i class="fa fa-lock"></i></span>
+            </div>
+            <div class="form-group">
+                <span class="input-icon"><i class="fa fa-lock"></i></span>
                     <input type="password" name="confirm_password" placeholder="Confirm Password" required>
-                </div>
-                <div class="form-group">
+            </div>
+            <div class="form-group">
                     <span class="input-icon"><i class="fa fa-user-tag"></i></span>
                     <select name="role" required>
-                        <option value="">Select Role</option>
-                        <option value="student">Student</option>
-                        <option value="teacher">Teacher</option>
-                    </select>
-                </div>
+                    <option value="">Select Role</option>
+                    <option value="student">Student</option>
+                    <option value="teacher">Teacher</option>
+                </select>
+            </div>
                 <div id="student-fields" style="display: none;">
                     <div class="form-group">
-                        <span class="input-icon"><i class="fa fa-id-card"></i></span>
+                <span class="input-icon"><i class="fa fa-id-card"></i></span>
                         <input type="text" name="faculty_number" placeholder="Faculty Number">
-                    </div>
+            </div>
                     <div class="form-group">
                         <span class="input-icon"><i class="fa fa-graduation-cap"></i></span>
                         <select name="specialization">
-                            <option value="">Select Specialization</option>
-                            <option value="Software Engineering">Software Engineering</option>
-                            <option value="Information Systems">Information Systems</option>
-                            <option value="Computer Science">Computer Science</option>
-                            <option value="Applied Mathematics">Applied Mathematics</option>
-                            <option value="Informatics">Informatics</option>
-                        </select>
-                    </div>
+                    <option value="">Select Specialization</option>
+                    <option value="Software Engineering">Software Engineering</option>
+                    <option value="Information Systems">Information Systems</option>
+                    <option value="Computer Science">Computer Science</option>
+                    <option value="Applied Mathematics">Applied Mathematics</option>
+                    <option value="Informatics">Informatics</option>
+                </select>
+            </div>
                     <div class="form-group">
                         <span class="input-icon"><i class="fa fa-calendar"></i></span>
                         <select name="year_of_study">
-                            <option value="">Select Year</option>
+                    <option value="">Select Year</option>
                             <option value="1st year">1st Year</option>
                             <option value="2nd year">2nd Year</option>
                             <option value="3rd year">3rd Year</option>
                             <option value="4th year">4th Year</option>
-                        </select>
-                    </div>
-                </div>
-                <button type="submit" class="btn-primary">Register</button>
+                </select>
+            </div>
+            </div>
+            <button type="submit" class="btn-primary">Register</button>
                 <div class="form-footer">
                     Already have an account? <a href="login.php">Login here</a>
                 </div>
-            </form>
-        </div>
+        </form>
+      </div>
     </div>
     <script>
         document.querySelector('select[name="role"]').addEventListener('change', function() {

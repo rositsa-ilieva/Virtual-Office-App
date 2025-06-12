@@ -22,14 +22,14 @@ ob_start();
     <link href="css/queue-schedule.css" rel="stylesheet">
 </head>
 <body>
-    <div class="upcoming-title">🗓️ Upcoming Meetings</div>
+<div class="upcoming-title">🗓️ Upcoming Meetings</div>
     <form method="GET" class="search-form">
         <input type="text" name="search" class="search-input" placeholder="Search by meeting name..." value="<?php echo htmlspecialchars($_GET['search'] ?? ''); ?>">
-        <?php if (!empty($_GET['search'])): ?>
+    <?php if (!empty($_GET['search'])): ?>
             <a href="queue-schedule.php" class="clear-button">Clear</a>
-        <?php endif; ?>
-    </form>
-    <div class="cards-container">
+    <?php endif; ?>
+</form>
+<div class="cards-container">
 <?php
 if ($user_role === 'student') {
     // For students: only show events not finished by the student and matching specialization/year
