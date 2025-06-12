@@ -286,7 +286,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mark_all_read'])) {
                     <div class="card p-4 shadow-sm">
                         <h5>Admin Panel</h5>
                         <p>Manage users, queues, and system settings.</p>
-                        <a href="../src/Admin/admin.php" class="btn btn-primary">Go to Admin Panel</a>
                     </div>
                 </div>
             </div>
