@@ -171,6 +171,11 @@ if (!$queue) {
     exit();
 }
 
+// Fetch teacher info
+$teacher_stmt = $pdo->prepare('SELECT name, email, teacher_role, subjects FROM users WHERE id = ?');
+$teacher_stmt->execute([$queue['teacher_id']]);
+$teacher_info = $teacher_stmt->fetch();
+
 // Get all students in the waiting room, in a meeting, or away for this queue
 $sql = "SELECT qe.position, u.name as student_name, u.faculty_number as student_faculty_number, qe.status, qe.started_at, qe.ended_at, qe.estimated_start_time, qe.student_id, qe.comment, qe.is_comment_public
         FROM queue_entries qe
@@ -287,6 +292,22 @@ ob_start();
       <div style="display:flex;gap:1.2rem;margin-bottom:0.7rem;">
         <a href="<?php echo htmlspecialchars($queue['meeting_link'] ?? '#'); ?>" target="_blank" class="btn" style="background:#6366f1;color:#fff;font-size:1.18rem;font-weight:700;padding:0.85em 2.2em;border-radius:18px;box-shadow:0 2px 12px rgba(99,102,241,0.10);border:none;">Open Meeting Link</a>
         <a href="my-queues.php" class="btn" style="background:#e0e7ff;color:#6366f1;font-size:1.18rem;font-weight:700;padding:0.85em 2.2em;border-radius:18px;box-shadow:none;">Back to My Queues</a>
+      </div>
+    </div>
+    <!-- Teacher Info Card -->
+    <div style="background:#f8fafc;border-radius:18px;box-shadow:0 2px 12px rgba(99,102,241,0.07);padding:1.5rem 2.2rem 1.2rem 2.2rem;max-width:600px;margin:0 auto 2.2rem auto;display:flex;align-items:center;gap:1.5rem;">
+      <div style="background:#e0e7ff;border-radius:50%;width:60px;height:60px;display:flex;align-items:center;justify-content:center;font-size:2.1rem;color:#6366f1;">
+        <i class="fa fa-chalkboard-teacher"></i>
+      </div>
+      <div>
+        <div style="font-size:1.25rem;font-weight:700;color:#222;"> <?php echo htmlspecialchars($teacher_info['name'] ?? '-'); ?> </div>
+        <div style="color:#64748b;font-size:1.07rem;"> <?php echo htmlspecialchars($teacher_info['email'] ?? '-'); ?> </div>
+        <?php if (!empty($teacher_info['teacher_role'])): ?>
+          <div style="color:#2563eb;font-size:1.07rem;font-weight:600;"> <?php echo htmlspecialchars($teacher_info['teacher_role']); ?> </div>
+        <?php endif; ?>
+        <?php if (!empty($teacher_info['subjects'])): ?>
+          <div style="color:#334155;font-size:1.05rem;margin-top:0.2rem;"><strong>Subjects:</strong> <?php echo htmlspecialchars($teacher_info['subjects']); ?></div>
+        <?php endif; ?>
       </div>
     </div>
     <div style="margin-top:2.2rem;">

@@ -233,6 +233,24 @@ if ($queue_id) {
         }
         echo '<a href="manage-queues.php" class="btn-modern" style="background:linear-gradient(90deg,#f1f5f9 0%,#6366f1 100%);color:#6366f1;">Back to My Queues</a>';
         echo '</div>';
+        // Fetch teacher info
+        $teacher_stmt = $pdo->prepare('SELECT name, email, teacher_role, subjects FROM users WHERE id = ?');
+        $teacher_stmt->execute([$queue['teacher_id']]);
+        $teacher_info = $teacher_stmt->fetch();
+        // Teacher info card
+        echo '<div style="background:#f8fafc;border-radius:18px;box-shadow:0 2px 12px rgba(99,102,241,0.07);padding:1.5rem 2.2rem 1.2rem 2.2rem;max-width:600px;margin:0 auto 2.2rem auto;display:flex;align-items:center;gap:1.5rem;">';
+        echo '<div style="background:#e0e7ff;border-radius:50%;width:60px;height:60px;display:flex;align-items:center;justify-content:center;font-size:2.1rem;color:#6366f1;"><i class="fa fa-chalkboard-teacher"></i></div>';
+        echo '<div>';
+        echo '<div style="font-size:1.25rem;font-weight:700;color:#222;">' . htmlspecialchars($teacher_info['name'] ?? '-') . '</div>';
+        echo '<div style="color:#64748b;font-size:1.07rem;">' . htmlspecialchars($teacher_info['email'] ?? '-') . '</div>';
+        if (!empty($teacher_info['teacher_role'])) {
+            echo '<div style="color:#2563eb;font-size:1.07rem;font-weight:600;">' . htmlspecialchars($teacher_info['teacher_role']) . '</div>';
+        }
+        if (!empty($teacher_info['subjects'])) {
+            echo '<div style="color:#334155;font-size:1.05rem;margin-top:0.2rem;"><strong>Subjects:</strong> ' . htmlspecialchars($teacher_info['subjects']) . '</div>';
+        }
+        echo '</div>';
+        echo '</div>';
         echo '<div class="table-responsive"><table class="table-modern"><thead><tr><th>Position</th><th>Name</th><th>Faculty Number</th><th>Specialization</th><th>Status</th><th>Comment</th><th>Action</th></tr></thead><tbody>';
         if (empty($entries)) {
             echo '<tr><td colspan="6" class="text-center">No students currently in queue.</td></tr>';
