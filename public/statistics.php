@@ -174,6 +174,19 @@ $stmt = $pdo->prepare('
 $stmt->execute([$queue_id]);
 $hourly_data = $stmt->fetchAll();
 
+// Fetch users by status for modals
+$status_users = [];
+foreach ([
+    'waiting' => 'Waiting',
+    'in_meeting' => 'In Meeting',
+    'done' => 'Completed',
+    'skipped' => 'Skipped'
+] as $status_key => $status_label) {
+    $stmt = $pdo->prepare('SELECT u.name, u.faculty_number FROM queue_entries qe JOIN users u ON qe.student_id = u.id WHERE qe.queue_id = ? AND qe.status = ?');
+    $stmt->execute([$queue_id, $status_key]);
+    $status_users[$status_key] = $stmt->fetchAll();
+}
+
 function formatDuration($minutes) {
     if (!is_numeric($minutes) || $minutes < 0.1) {
         return '0 minutes';
@@ -205,10 +218,10 @@ ob_start();
     <div class="stats-card">
         <h5>Status Distribution</h5>
         <div style="margin-bottom:1.2rem;">
-            <span>Waiting <span class="stats-badge stats-badge-waiting"><?php echo $stats['status_counts']['waiting']; ?></span></span><br>
-            <span>In Meeting <span class="stats-badge stats-badge-in_meeting"><?php echo $stats['status_counts']['in_meeting']; ?></span></span><br>
-            <span>Completed <span class="stats-badge stats-badge-done"><?php echo $stats['status_counts']['done']; ?></span></span><br>
-            <span>Skipped <span class="stats-badge stats-badge-skipped"><?php echo $stats['status_counts']['skipped']; ?></span></span>
+            <span style="cursor:pointer;" onclick="openModal('waiting')">Waiting <span class="stats-badge stats-badge-waiting"><?php echo $stats['status_counts']['waiting']; ?></span></span><br>
+            <span style="cursor:pointer;" onclick="openModal('in_meeting')">In Meeting <span class="stats-badge stats-badge-in_meeting"><?php echo $stats['status_counts']['in_meeting']; ?></span></span><br>
+            <span style="cursor:pointer;" onclick="openModal('done')">Completed <span class="stats-badge stats-badge-done"><?php echo $stats['status_counts']['done']; ?></span></span><br>
+            <span style="cursor:pointer;" onclick="openModal('skipped')">Skipped <span class="stats-badge stats-badge-skipped"><?php echo $stats['status_counts']['skipped']; ?></span></span>
         </div>
         <h5>Time Information</h5>
         <div style="color:#64748b;font-size:1.05rem;">
@@ -302,6 +315,56 @@ new Chart(hourlyCtx, {
         }
     }
 });
+</script>
+<!-- Status Modals -->
+<?php foreach ([
+    'waiting' => 'Waiting',
+    'in_meeting' => 'In Meeting',
+    'done' => 'Completed',
+    'skipped' => 'Skipped'
+] as $status_key => $status_label): ?>
+<div id="modal-<?php echo $status_key; ?>" class="status-modal" style="display:none;position:fixed;z-index:9999;left:0;top:0;width:100vw;height:100vh;background:rgba(30,41,59,0.18);align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:18px;box-shadow:0 8px 40px rgba(99,102,241,0.13);padding:2.2rem 2.5rem;min-width:320px;max-width:95vw;position:relative;">
+    <button onclick="closeModal('<?php echo $status_key; ?>')" style="position:absolute;top:1.1rem;right:1.1rem;background:none;border:none;font-size:1.5rem;color:#64748b;cursor:pointer;">&times;</button>
+    <h3 style="margin-bottom:1.2rem;color:#2563eb;font-size:1.25rem;font-weight:700;"><?php echo $status_label; ?> Members</h3>
+    <?php if (empty($status_users[$status_key])): ?>
+      <div style="color:#64748b;font-size:1.08rem;">No members in this status.</div>
+    <?php else: ?>
+      <table style="width:100%;border-collapse:separate;border-spacing:0;background:#f8fafc;border-radius:12px;box-shadow:0 2px 8px rgba(99,102,241,0.07);overflow:hidden;">
+        <thead>
+          <tr style="background:#e0e7ff;font-size:1.08rem;font-weight:700;color:#222;">
+            <th style="padding:0.8em 1.1em;text-align:left;">Name</th>
+            <th style="padding:0.8em 1.1em;text-align:left;">Faculty Number</th>
+          </tr>
+        </thead>
+        <tbody>
+        <?php foreach ($status_users[$status_key] as $user): ?>
+          <tr>
+            <td style="padding:0.7em 1.1em;font-size:1.07rem;"> <?php echo htmlspecialchars($user['name']); ?> </td>
+            <td style="padding:0.7em 1.1em;font-size:1.07rem;"> <?php echo htmlspecialchars($user['faculty_number'] ?? '-'); ?> </td>
+          </tr>
+        <?php endforeach; ?>
+        </tbody>
+      </table>
+    <?php endif; ?>
+  </div>
+</div>
+<?php endforeach; ?>
+<script>
+function openModal(status) {
+  document.getElementById('modal-' + status).style.display = 'flex';
+}
+function closeModal(status) {
+  document.getElementById('modal-' + status).style.display = 'none';
+}
+window.onclick = function(event) {
+  ['waiting','in_meeting','done','skipped'].forEach(function(status) {
+    var modal = document.getElementById('modal-' + status);
+    if (modal && event.target === modal) {
+      modal.style.display = 'none';
+    }
+  });
+}
 </script>
 <?php
 $content = ob_get_clean();

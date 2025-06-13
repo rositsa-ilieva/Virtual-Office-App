@@ -220,7 +220,7 @@ if ($queue_id) {
             exit();
         }
         // Get all students currently waiting or in meeting
-        $sql = "SELECT qe.*, u.name as student_name, u.specialization as student_specialization FROM queue_entries qe JOIN users u ON qe.student_id = u.id WHERE qe.queue_id = ? AND qe.status IN ('waiting', 'in_meeting') ORDER BY qe.position ASC";
+        $sql = "SELECT qe.*, u.name as student_name, u.specialization as student_specialization, u.faculty_number as student_faculty_number FROM queue_entries qe JOIN users u ON qe.student_id = u.id WHERE qe.queue_id = ? AND qe.status IN ('waiting', 'in_meeting') ORDER BY qe.position ASC";
         $stmt = $pdo->prepare($sql);
         $stmt->execute([$queue_id]);
         $entries = $stmt->fetchAll();
@@ -233,7 +233,7 @@ if ($queue_id) {
         }
         echo '<a href="manage-queues.php" class="btn-modern" style="background:linear-gradient(90deg,#f1f5f9 0%,#6366f1 100%);color:#6366f1;">Back to My Queues</a>';
         echo '</div>';
-        echo '<div class="table-responsive"><table class="table-modern"><thead><tr><th>Position</th><th>Name</th><th>Specialization</th><th>Status</th><th>Comment</th><th>Action</th></tr></thead><tbody>';
+        echo '<div class="table-responsive"><table class="table-modern"><thead><tr><th>Position</th><th>Name</th><th>Faculty Number</th><th>Specialization</th><th>Status</th><th>Comment</th><th>Action</th></tr></thead><tbody>';
         if (empty($entries)) {
             echo '<tr><td colspan="6" class="text-center">No students currently in queue.</td></tr>';
         } else {
@@ -246,6 +246,7 @@ if ($queue_id) {
                 echo '<tr>';
                 echo '<td>' . $entry['position'] . '</td>';
                 echo '<td>' . htmlspecialchars($entry['student_name']) . '</td>';
+                echo '<td>' . htmlspecialchars($entry['student_faculty_number'] ?? '-') . '</td>';
                 echo '<td>' . (!empty($entry['student_specialization']) ? htmlspecialchars($entry['student_specialization']) : 'Not set') . '</td>';
                 echo '<td><span class="status-badge ' . $statusClass . '">' . ucfirst(str_replace('_', ' ', $entry['status'])) . '</span></td>';
                 echo '<td>' . (!empty($entry['comment']) ? htmlspecialchars($entry['comment']) : '-') . '</td>';
@@ -261,7 +262,35 @@ if ($queue_id) {
             }
         }
         echo '</tbody></table></div>';
-        // Optionally, add past students table here with same style
+        // Past Meetings History Section
+        // Get all students with status done or skipped
+        $sql_past = "SELECT qe.*, u.name as student_name, u.specialization as student_specialization, u.faculty_number as student_faculty_number FROM queue_entries qe JOIN users u ON qe.student_id = u.id WHERE qe.queue_id = ? AND qe.status IN ('done', 'skipped') ORDER BY qe.position ASC";
+        $stmt_past = $pdo->prepare($sql_past);
+        $stmt_past->execute([$queue_id]);
+        $past_entries = $stmt_past->fetchAll();
+        echo '<div style="margin-top:2.5rem;">';
+        echo '<h3 style="margin-bottom:1.2rem;color:#64748b;">Past Meetings History</h3>';
+        echo '<div class="table-responsive"><table class="table-modern"><thead><tr><th>Position</th><th>Name</th><th>Faculty Number</th><th>Specialization</th><th>Status</th><th>Comment</th><th>Start Time</th><th>End Time</th></tr></thead><tbody>';
+        if (empty($past_entries)) {
+            echo '<tr><td colspan="7" class="text-center">No past meetings for this queue.</td></tr>';
+        } else {
+            foreach ($past_entries as $entry) {
+                $statusClass = ($entry['status'] === 'done') ? 'status-done' : (($entry['status'] === 'skipped') ? 'status-skipped' : 'status-other');
+                echo '<tr>';
+                echo '<td>' . $entry['position'] . '</td>';
+                echo '<td>' . htmlspecialchars($entry['student_name']) . '</td>';
+                echo '<td>' . htmlspecialchars($entry['student_faculty_number'] ?? '-') . '</td>';
+                echo '<td>' . (!empty($entry['student_specialization']) ? htmlspecialchars($entry['student_specialization']) : 'Not set') . '</td>';
+                echo '<td><span class="status-badge ' . $statusClass . '">' . ucfirst($entry['status']) . ' (Completed)</span></td>';
+                echo '<td>' . (!empty($entry['comment']) ? htmlspecialchars($entry['comment']) : '-') . '</td>';
+                echo '<td>' . (!empty($entry['started_at']) ? date('g:i A', strtotime($entry['started_at'])) : '-') . '</td>';
+                echo '<td>' . (!empty($entry['ended_at']) ? date('g:i A', strtotime($entry['ended_at'])) : '-') . '</td>';
+                echo '</tr>';
+            }
+        }
+        echo '</tbody></table></div>';
+        echo '</div>';
+        // End Past Meetings Section
         echo '</div>';
         echo '</div>';
         // Add the buttons in the queue management view

@@ -2,7 +2,7 @@
 // Database configuration
 define('DB_HOST', 'localhost');
 define('DB_USER', 'root');
-define('DB_PASS', '');
+define('DB_PASS', '');  // Default XAMPP MySQL root password is empty
 define('DB_NAME', 'virtual_office');
 
 // Create connection

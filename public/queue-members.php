@@ -172,7 +172,7 @@ if (!$queue) {
 }
 
 // Get all students in the waiting room, in a meeting, or away for this queue
-$sql = "SELECT qe.position, u.name as student_name, qe.status, qe.started_at, qe.ended_at, qe.estimated_start_time, qe.student_id, qe.comment, qe.is_comment_public
+$sql = "SELECT qe.position, u.name as student_name, u.faculty_number as student_faculty_number, qe.status, qe.started_at, qe.ended_at, qe.estimated_start_time, qe.student_id, qe.comment, qe.is_comment_public
         FROM queue_entries qe
         JOIN users u ON qe.student_id = u.id
         WHERE qe.queue_id = ? AND qe.status IN ('waiting', 'in_meeting', 'away')
@@ -182,7 +182,7 @@ $stmt->execute([$queue_id]);
 $members = $stmt->fetchAll();
 
 // Get past meetings (done/skipped)
-$sql_past = "SELECT qe.position, u.name as student_name, qe.status, qe.started_at, qe.ended_at, qe.student_id, qe.comment, qe.is_comment_public
+$sql_past = "SELECT qe.position, u.name as student_name, u.faculty_number as student_faculty_number, qe.status, qe.started_at, qe.ended_at, qe.student_id, qe.comment, qe.is_comment_public
         FROM queue_entries qe
         JOIN users u ON qe.student_id = u.id
         WHERE qe.queue_id = ? AND qe.status IN ('done', 'skipped')
@@ -295,6 +295,7 @@ ob_start();
           <tr style="background:#e0e7ff;font-size:1.13rem;font-weight:700;color:#222;">
             <th style="padding:1.2em 1.3em;text-align:left;border-top-left-radius:18px;">Position</th>
             <th style="padding:1.2em 1.3em;text-align:left;">Name</th>
+            <th style="padding:1.2em 1.3em;text-align:left;">Faculty Number</th>
             <th style="padding:1.2em 1.3em;text-align:left;">Specialization</th>
             <th style="padding:1.2em 1.3em;text-align:left;">Status</th>
             <th style="padding:1.2em 1.3em;text-align:left;">Comment</th>
@@ -320,6 +321,7 @@ ob_start();
           <tr<?php if ($isMe) echo ' style="background:#f4f7fb;"'; ?>>
             <td style="padding:1.1em 1.3em;font-weight:600;font-size:1.09rem;"> <?php echo $entry['position']; ?> </td>
             <td style="padding:1.1em 1.3em;font-size:1.09rem;"> <?php echo htmlspecialchars($entry['student_name']); ?> </td>
+            <td style="padding:1.1em 1.3em;font-size:1.09rem;"> <?php echo htmlspecialchars($entry['student_faculty_number'] ?? '-'); ?> </td>
             <td style="padding:1.1em 1.3em;font-size:1.09rem;"> <?php echo htmlspecialchars($spec); ?> </td>
             <td style="padding:1.1em 1.3em;">
               <span style="display:inline-block;background:<?php echo $statusColor; ?>20;color:<?php echo $statusColor; ?>;font-weight:700;font-size:1.07rem;padding:0.45em 1.3em;border-radius:16px;min-width:90px;text-align:center;letter-spacing:0.01em;">
@@ -359,6 +361,49 @@ ob_start();
         </tbody>
       </table>
     </div>
+    <!-- Past Meetings History Section -->
+    <div style="margin-top:2.5rem;">
+      <h3 style="margin-bottom:1.2rem;color:#64748b;">Past Meetings History</h3>
+      <table style="width:100%;border-collapse:separate;border-spacing:0;background:#fff;border-radius:22px;box-shadow:0 4px 24px rgba(99,102,241,0.10);overflow:hidden;">
+        <thead>
+          <tr style="background:#e0e7ff;font-size:1.13rem;font-weight:700;color:#222;">
+            <th style="padding:1.2em 1.3em;text-align:left;border-top-left-radius:18px;">Position</th>
+            <th style="padding:1.2em 1.3em;text-align:left;">Name</th>
+            <th style="padding:1.2em 1.3em;text-align:left;">Faculty Number</th>
+            <th style="padding:1.2em 1.3em;text-align:left;">Status</th>
+            <th style="padding:1.2em 1.3em;text-align:left;">Comment</th>
+            <th style="padding:1.2em 1.3em;text-align:left;">Start Time</th>
+            <th style="padding:1.2em 1.3em;text-align:left;">End Time</th>
+            <th style="padding:1.2em 1.3em;text-align:left;border-top-right-radius:18px;">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+<?php if (empty($past_meetings)): ?>
+          <tr><td colspan="7" style="text-align:center;color:#64748b;font-size:1.15rem;padding:2.5rem 0;">No past meetings for this queue.</td></tr>
+<?php else:
+    foreach ($past_meetings as $entry):
+        $status = strtolower($entry['status']);
+        $statusColor = $status === 'done' ? '#10b981' : ($status === 'skipped' ? '#f59e42' : '#64748b');
+        ?>
+          <tr>
+            <td style="padding:1.1em 1.3em;font-weight:600;font-size:1.09rem;"> <?php echo $entry['position']; ?> </td>
+            <td style="padding:1.1em 1.3em;font-size:1.09rem;"> <?php echo htmlspecialchars($entry['student_name']); ?> </td>
+            <td style="padding:1.1em 1.3em;font-size:1.09rem;"> <?php echo htmlspecialchars($entry['student_faculty_number'] ?? '-'); ?> </td>
+            <td style="padding:1.1em 1.3em;">
+              <span style="display:inline-block;background:<?php echo $statusColor; ?>20;color:<?php echo $statusColor; ?>;font-weight:700;font-size:1.07rem;padding:0.45em 1.3em;border-radius:16px;min-width:90px;text-align:center;letter-spacing:0.01em;">
+                <?php echo ucfirst($status); ?> (Completed)
+              </span>
+            </td>
+            <td style="padding:1.1em 1.3em;max-width:180px;overflow-wrap:break-word;font-size:1.07rem;"> <?php echo ($entry['is_comment_public']) ? htmlspecialchars($entry['comment']) : '-'; ?> </td>
+            <td style="padding:1.1em 1.3em;font-size:1.07rem;white-space:nowrap;"> <?php echo $entry['started_at'] ? date('g:i A', strtotime($entry['started_at'])) : '-'; ?> </td>
+            <td style="padding:1.1em 1.3em;font-size:1.07rem;white-space:nowrap;"> <?php echo $entry['ended_at'] ? date('g:i A', strtotime($entry['ended_at'])) : '-'; ?> </td>
+            <td style="padding:1.1em 1.3em;">-</td>
+          </tr>
+<?php endforeach; endif; ?>
+        </tbody>
+      </table>
+    </div>
+    <!-- End Past Meetings Section -->
   </div>
 </div>
 <?php
