@@ -227,57 +227,69 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['mark_all_read'])) {
     <div class="main-content">
         <?php if ($user_role === 'student'): ?>
             <div class="student-dashboard-main">
-              <div class="student-dashboard-profile">
-                <div class="student-dashboard-avatar"><i class="fa fa-user-graduate"></i></div>
-                <div class="student-dashboard-profile-info">
-                  <div class="student-dashboard-welcome">Welcome, <?php echo htmlspecialchars($user['name'] ?? $user['email']); ?>!</div>
-                </div>
+                <div class="student-dashboard-profile">
+                    <?php if (!empty($user['profile_photo'])): ?>
+                        <img src="<?php echo htmlspecialchars($user['profile_photo']); ?>" alt="Profile Photo" class="student-dashboard-avatar">
+                    <?php else: ?>
+                        <div class="student-dashboard-avatar">
+                            <i class="fa fa-user-graduate"></i>
+                        </div>
+                    <?php endif; ?>
+                    <div class="student-dashboard-profile-info">
+                        <div class="student-dashboard-welcome">Welcome, <?php echo htmlspecialchars($user['name'] ?? $user['email']); ?>!</div>
                     </div>
-              <div class="student-dashboard-section-title">Quick Actions</div>
-              <div class="student-dashboard-cards">
-                <div class="student-dashboard-card">
-                  <div class="student-dashboard-icon"><i class="fa fa-list"></i></div>
-                  <div class="student-dashboard-action-title">My Queues</div>
-                  <div class="student-dashboard-action-desc">View and manage your queues.</div>
-                  <a href="my-queues.php" class="btn-primary">Go to My Queues</a>
                 </div>
-                <div class="student-dashboard-card">
-                  <div class="student-dashboard-icon"><i class="fa fa-calendar-alt"></i></div>
-                  <div class="student-dashboard-action-title">Upcoming Meetings</div>
-                  <div class="student-dashboard-action-desc">See your upcoming appointments.</div>
-                  <a href="queue-schedule.php" class="btn-primary">View Meetings</a>
-                </div>
-                <div class="student-dashboard-card">
-                  <div class="student-dashboard-icon"><i class="fa fa-history"></i></div>
-                  <div class="student-dashboard-action-title">Past Meetings</div>
-                  <div class="student-dashboard-action-desc">Review completed meetings.</div>
-                  <a href="history.php" class="btn-primary">View History</a>
+                <div class="student-dashboard-section-title">Quick Actions</div>
+                <div class="student-dashboard-cards">
+                    <div class="student-dashboard-card">
+                        <div class="student-dashboard-icon"><i class="fa fa-list"></i></div>
+                        <div class="student-dashboard-action-title">My Queues</div>
+                        <div class="student-dashboard-action-desc">View and manage your queues.</div>
+                        <a href="my-queues.php" class="btn-primary">Go to My Queues</a>
+                    </div>
+                    <div class="student-dashboard-card">
+                        <div class="student-dashboard-icon"><i class="fa fa-calendar-alt"></i></div>
+                        <div class="student-dashboard-action-title">Upcoming Meetings</div>
+                        <div class="student-dashboard-action-desc">See your upcoming appointments.</div>
+                        <a href="queue-schedule.php" class="btn-primary">View Meetings</a>
+                    </div>
+                    <div class="student-dashboard-card">
+                        <div class="student-dashboard-icon"><i class="fa fa-history"></i></div>
+                        <div class="student-dashboard-action-title">Past Meetings</div>
+                        <div class="student-dashboard-action-desc">Review completed meetings.</div>
+                        <a href="history.php" class="btn-primary">View History</a>
                     </div>
                 </div>
             </div>
         <?php elseif ($user_role === 'teacher'): ?>
             <div class="dashboard-main">
-              <div class="dashboard-profile">
-                <div class="dashboard-avatar"><i class="fa fa-chalkboard-teacher"></i></div>
-                <div class="dashboard-profile-info">
-                  <div class="dashboard-welcome">Welcome, <?php echo htmlspecialchars($user['name'] ?? $user['email']); ?>!</div>
-                  <div class="dashboard-role">Teacher</div>
-                </div>
+                <div class="dashboard-profile">
+                    <?php if (!empty($user['profile_photo'])): ?>
+                        <img src="<?php echo htmlspecialchars($user['profile_photo']); ?>" alt="Profile Photo" class="dashboard-avatar">
+                    <?php else: ?>
+                        <div class="dashboard-avatar">
+                            <i class="fa fa-chalkboard-teacher"></i>
+                        </div>
+                    <?php endif; ?>
+                    <div class="dashboard-profile-info">
+                        <div class="dashboard-welcome">Welcome, <?php echo htmlspecialchars($user['name'] ?? $user['email']); ?>!</div>
+                        <div class="dashboard-role">Teacher</div>
                     </div>
-              <div class="dashboard-section-title">Actions & Management Tools</div>
-              <div class="dashboard-cards">
-                <div class="dashboard-card">
-                  <div class="dashboard-action-icon"><i class="fa fa-plus-circle"></i></div>
-                  <div class="dashboard-action-title">Create Room</div>
-                  <div class="dashboard-action-desc">Set up a new meeting room for your students.</div>
-                  <a href="create-room.php" class="btn-primary">Create Room</a>
                 </div>
-                <div class="dashboard-card">
-                  <div class="dashboard-action-icon"><i class="fa fa-tasks"></i></div>
-                  <div class="dashboard-action-title">Manage Queues</div>
-                  <div class="dashboard-action-desc">View and manage all queues you oversee.</div>
-                  <a href="manage-queues.php" class="btn-primary">Manage Queues</a>
-                </div>
+                <div class="dashboard-section-title">Actions & Management Tools</div>
+                <div class="dashboard-cards">
+                    <div class="dashboard-card">
+                        <div class="dashboard-action-icon"><i class="fa fa-plus-circle"></i></div>
+                        <div class="dashboard-action-title">Create Room</div>
+                        <div class="dashboard-action-desc">Set up a new meeting room for your students.</div>
+                        <a href="create-room.php" class="btn-primary">Create Room</a>
+                    </div>
+                    <div class="dashboard-card">
+                        <div class="dashboard-action-icon"><i class="fa fa-tasks"></i></div>
+                        <div class="dashboard-action-title">Manage Queues</div>
+                        <div class="dashboard-action-desc">View and manage all queues you oversee.</div>
+                        <a href="manage-queues.php" class="btn-primary">Manage Queues</a>
+                    </div>
                 </div>
             </div>
         <?php elseif ($user_role === 'admin'): ?>

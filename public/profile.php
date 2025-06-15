@@ -19,6 +19,69 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $subjects = $_POST['subjects'] ?? '';
     $specialization = $_POST['specialization'] ?? ($user['specialization'] ?? '');
     $year_of_study = $_POST['year_of_study'] ?? ($user['year_of_study'] ?? '');
+    $profile_photo = $user['profile_photo'] ?? null;
+
+    // Handle cropped image
+    if (isset($_POST['cropped_image']) && !empty($_POST['cropped_image'])) {
+        $cropped_image_data = $_POST['cropped_image'];
+        
+        // Remove the data URL prefix to get the base64 encoded image data
+        if (preg_match('/^data:image\/(\w+);base64,/', $cropped_image_data, $type)) {
+            $cropped_image_data = substr($cropped_image_data, strpos($cropped_image_data, ',') + 1);
+            $type = strtolower($type[1]); // jpg, png, gif
+
+            if (!in_array($type, ['jpg', 'jpeg', 'png', 'gif'])) {
+                $error = 'Invalid image type.';
+            } else {
+                $cropped_image_data = base64_decode($cropped_image_data);
+
+                if ($cropped_image_data === false) {
+                    $error = 'Failed to decode image data.';
+                } else {
+                    $new_filename = uniqid('profile_') . '.' . $type;
+                    $upload_path = 'uploads/profile_photos/' . $new_filename;
+
+                    // Delete old profile photo if exists
+                    if ($profile_photo && file_exists($profile_photo)) {
+                        unlink($profile_photo);
+                    }
+
+                    if (file_put_contents($upload_path, $cropped_image_data)) {
+                        $profile_photo = $upload_path;
+                    } else {
+                        $error = 'Failed to save profile photo.';
+                    }
+                }
+            }
+        } else {
+            $error = 'Invalid image data.';
+        }
+    }
+    // Handle regular file upload as fallback
+    else if (isset($_FILES['profile_photo']) && $_FILES['profile_photo']['error'] === UPLOAD_ERR_OK) {
+        $allowed_types = ['image/jpeg', 'image/png', 'image/gif'];
+        $max_size = 5 * 1024 * 1024; // 5MB
+
+        if (!in_array($_FILES['profile_photo']['type'], $allowed_types)) {
+            $error = 'Invalid file type. Please upload a JPEG, PNG, or GIF image.';
+        } elseif ($_FILES['profile_photo']['size'] > $max_size) {
+            $error = 'File size too large. Maximum size is 5MB.';
+        } else {
+            $file_extension = pathinfo($_FILES['profile_photo']['name'], PATHINFO_EXTENSION);
+            $new_filename = uniqid('profile_') . '.' . $file_extension;
+            $upload_path = 'uploads/profile_photos/' . $new_filename;
+
+            if (move_uploaded_file($_FILES['profile_photo']['tmp_name'], $upload_path)) {
+                // Delete old profile photo if exists
+                if ($profile_photo && file_exists($profile_photo)) {
+                    unlink($profile_photo);
+                }
+                $profile_photo = $upload_path;
+            } else {
+                $error = 'Failed to upload profile photo.';
+            }
+        }
+    }
 
     if (empty($name)) {
         $error = 'Name is required';
@@ -27,8 +90,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $sql = 'UPDATE users SET name = ?, email = ?';
             $params = [$name, $email];
 
+            if ($profile_photo) {
+                $sql .= ', profile_photo = ?';
+                $params[] = $profile_photo;
+            }
+
             if ($user_role === 'student') {
-                // Do NOT update faculty_number
                 $sql .= ', specialization = ?, year_of_study = ?';
                 $params[] = $specialization;
                 $params[] = $year_of_study;
@@ -52,7 +119,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $error = 'Failed to update profile';
             }
         } catch (PDOException $e) {
-            $error = 'An error occurred while updating profile';
+            $error = 'An error occurred while updating profile: ' . $e->getMessage();
         }
     }
 }
@@ -61,11 +128,23 @@ ob_start();
 ?>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
 <link rel="stylesheet" href="css/profile.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+
 <div class="profile-outer">
   <div class="profile-card">
     <div class="profile-header">
-      <i class="fa fa-user-cog"></i>
       <div class="profile-title">Edit Profile</div>
+      <div style="height: 18px;"></div>
+      <div class="profile-photo-container">
+        <?php if (!empty($user['profile_photo'])): ?>
+          <img src="<?php echo htmlspecialchars($user['profile_photo']); ?>" alt="Profile Photo" class="profile-photo">
+        <?php else: ?>
+          <div class="profile-photo-placeholder">
+            <i class="fa fa-user-cog"></i>
+          </div>
+        <?php endif; ?>
+      </div>
     </div>
     <?php if ($error): ?>
       <div class="profile-alert profile-alert-error"><?php echo htmlspecialchars($error); ?></div>
@@ -73,7 +152,32 @@ ob_start();
     <?php if ($success): ?>
       <div class="profile-alert profile-alert-success"><?php echo htmlspecialchars($success); ?></div>
     <?php endif; ?>
-    <form method="POST" action="" style="width:100%;">
+    <form method="POST" action="" enctype="multipart/form-data" style="width:100%;">
+      <div class="form-group">
+        <label for="profile_photo" class="photo-upload-label">
+          <span class="upload-text">Upload Profile Photo</span>
+        </label>
+        <input type="file" name="profile_photo" id="profile_photo" accept="image/*" class="photo-upload-input">
+        <input type="hidden" name="cropped_image" id="cropped_image">
+      </div>
+      <!-- Cropper Modal -->
+      <div id="cropperModal" class="modal">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h3>Crop Profile Photo</h3>
+            <span class="close">&times;</span>
+          </div>
+          <div class="modal-body">
+            <div class="img-container">
+              <img id="cropperImage" src="" alt="Image to crop">
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn-secondary" id="cancelCrop">Cancel</button>
+            <button type="button" class="btn-primary" id="cropImage">Crop & Save</button>
+          </div>
+        </div>
+      </div>
       <div class="form-group">
         <span class="input-icon"><i class="fa fa-user"></i></span>
         <input type="text" name="name" class="form-control" value="<?php echo htmlspecialchars($user['name'] ?? ''); ?>" required placeholder="Full Name">
@@ -122,6 +226,86 @@ ob_start();
     </form>
   </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const modal = document.getElementById('cropperModal');
+  const cropperImage = document.getElementById('cropperImage');
+  const profilePhotoInput = document.getElementById('profile_photo');
+  const croppedImageInput = document.getElementById('cropped_image');
+  const closeBtn = document.querySelector('.close');
+  const cancelBtn = document.getElementById('cancelCrop');
+  const cropBtn = document.getElementById('cropImage');
+  let cropper;
+
+  // Open modal when file is selected
+  profilePhotoInput.addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        cropperImage.src = e.target.result;
+        modal.style.display = 'block';
+        if (cropper) {
+          cropper.destroy();
+        }
+        cropper = new Cropper(cropperImage, {
+          aspectRatio: 1,
+          viewMode: 1,
+          dragMode: 'move',
+          autoCropArea: 0.8,
+          restore: false,
+          guides: true,
+          center: true,
+          highlight: false,
+          cropBoxMovable: true,
+          cropBoxResizable: true,
+          toggleDragModeOnDblclick: false,
+        });
+      };
+      reader.readAsDataURL(file);
+    }
+  });
+
+  // Close modal
+  function closeModal() {
+    modal.style.display = 'none';
+    if (cropper) {
+      cropper.destroy();
+      cropper = null;
+    }
+  }
+
+  closeBtn.onclick = closeModal;
+  cancelBtn.onclick = closeModal;
+
+  // Crop and save
+  cropBtn.addEventListener('click', function() {
+    if (!cropper) return;
+
+    const canvas = cropper.getCroppedCanvas({
+      width: 300,
+      height: 300,
+      fillColor: '#fff',
+      imageSmoothingEnabled: true,
+      imageSmoothingQuality: 'high',
+    });
+
+    if (canvas) {
+      const croppedImageData = canvas.toDataURL('image/jpeg', 0.9);
+      croppedImageInput.value = croppedImageData;
+      closeModal();
+    }
+  });
+
+  // Close modal when clicking outside
+  window.onclick = function(event) {
+    if (event.target == modal) {
+      closeModal();
+    }
+  };
+});
+</script>
 <?php
 $content = ob_get_clean();
 require '../src/Includes/layout.php';

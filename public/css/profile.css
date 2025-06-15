@@ -114,7 +114,198 @@
     color: #b91c1c;
     border: 1.5px solid #ef4444;
 }
+.profile-photo-container {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    overflow: hidden;
+    margin-bottom: 1rem;
+    background: #e0e7ff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(99,102,241,0.15);
+}
+.profile-photo {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+.profile-photo-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 3rem;
+    color: #6366f1;
+}
+.photo-upload-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem 0.75rem 1.7rem;
+    background: #f1f5f9;
+    border: 1px solid #cbd5e1;
+    border-radius: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+    width: 100%;
+    box-sizing: border-box;
+    position: relative;
+}
+.photo-upload-label:hover {
+    background: #e0e7ff;
+    border-color: #6366f1;
+}
+.photo-upload-label .input-icon {
+    color: #6366f1;
+    font-size: 1.1em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.5em;
+    margin-right: 0.7em;
+    margin-top: 6px;
+}
+.upload-text {
+    color: #64748b;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    height: 32px;
+}
+.photo-upload-label input[type="file"] {
+    margin-left: 0.5rem;
+    margin-top: 0;
+    vertical-align: middle;
+}
+.photo-upload-input {
+    display: none;
+}
 @media (max-width: 700px) {
     .profile-card { padding: 1.2rem 0.7rem; }
     .profile-outer { padding-top: 1.2rem; padding-bottom: 1.2rem; }
+}
+
+/* Modal Styles */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+}
+
+.modal-content {
+    background: #fff;
+    margin: 2% auto;
+    padding: 0;
+    width: 90%;
+    max-width: 800px;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    animation: modalFadeIn 0.3s ease-out;
+}
+
+@keyframes modalFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.modal-header {
+    padding: 1.2rem 1.5rem;
+    border-bottom: 1px solid #e2e8f0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-header h3 {
+    margin: 0;
+    font-size: 1.4rem;
+    color: #1e293b;
+}
+
+.close {
+    color: #64748b;
+    font-size: 1.8rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.close:hover {
+    color: #1e293b;
+}
+
+.modal-body {
+    padding: 1.5rem;
+    max-height: 70vh;
+    overflow: auto;
+}
+
+.img-container {
+    max-height: 60vh;
+    background: #f8fafc;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.img-container img {
+    max-width: 100%;
+    display: block;
+}
+
+.modal-footer {
+    padding: 1.2rem 1.5rem;
+    border-top: 1px solid #e2e8f0;
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+}
+
+.btn-secondary {
+    padding: 0.75rem 1.5rem;
+    background: #f1f5f9;
+    color: #64748b;
+    border: 1px solid #cbd5e1;
+    border-radius: 12px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-secondary:hover {
+    background: #e2e8f0;
+    color: #1e293b;
+}
+
+/* Cropper.js Custom Styles */
+.cropper-view-box,
+.cropper-face {
+    border-radius: 50%;
+}
+
+.cropper-view-box {
+    box-shadow: 0 0 0 1px #6366f1;
+    outline: 0;
+}
+
+.cropper-point {
+    background-color: #6366f1;
+}
+
+.cropper-line {
+    background-color: #6366f1;
 } 
