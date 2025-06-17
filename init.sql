@@ -23,7 +23,8 @@ CREATE TABLE IF NOT EXISTS users (
     specialization VARCHAR(100) DEFAULT NULL,
     year_of_study VARCHAR(20) DEFAULT NULL,
     teacher_role VARCHAR(100) DEFAULT NULL,
-    subjects TEXT
+    subjects TEXT,
+    profile_photo VARCHAR(255) DEFAULT NULL
 );
 
 -- Create queues table
